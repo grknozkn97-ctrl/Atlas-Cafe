@@ -10,7 +10,7 @@ const kitchenData = [
   {
     id: 'breakfast', title: 'Breakfast', items: [
       { id: 'b1', name: 'Fast Breakfast', weight: '450 GR', description: '1 Boiled Egg, 2 Borek Roll, Gouda Cheese, White Cheese, Black and Green Olives, Lettuce, Tomatoes, Cucumber, Ajvar, Honey, Butter, Bread', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/36f492d9ae1187852e4e25e4f498ad0f.jpg' },
-      { id: 'b7', name: 'Burek Plate', weight: '450 GR', description: '1 Boiled Egg, 2 Borek Roll, Gouda Cheese, White Cheese, Black and Green Olives, Lettuce, Tomatoes, Cucumber, Ajvar, Honey, Butter, Bread', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/8650dde00739c140313f17a0e7d336bb.png' },
+      { id: 'b7', name: 'Burek Plate', weight: '450 GR', description: '10 Burek, Tomato, Cucumber, Ajvar, Honey with butter', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/8650dde00739c140313f17a0e7d336bb.png' },
       { id: 'b9', name: 'Priganice Plate', weight: '450 GR', description: '10 Pişi, Cheese, Honey with Butter, Jam', price: 5.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/47579aa3227067c69e4bbaf62b339b97.png' },
       { id: 'b2', name: 'Menemen', weight: '250 GR', description: 'Tomato, Green Pepper, 2 Eggs, Bread', price: 5.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/06a4888c757b627471b3c9bd739724dc.jpg' },
       { id: 'b3', name: 'Plain Egg', weight: '150 GR', description: '3 Eggs, Bread', price: 4.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/445ba067a2b85fdd92c39bb000fc0182.jpg' },
