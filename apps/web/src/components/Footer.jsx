@@ -15,10 +15,10 @@ const Footer = () => {
         {/* Contact Information */}
         <div className="mb-12 space-y-2">
           <p className="text-background/80 text-sm">
-            Email: info@atlascafe.com
+            Email: info@cafeatlas.me
           </p>
           <p className="text-background/80 text-sm">
-            Phone: +1 (555) 123-4567
+            Phone: +382 (067) 036-687
           </p>
         </div>
 
