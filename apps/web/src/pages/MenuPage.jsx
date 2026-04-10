@@ -11,7 +11,7 @@ const kitchenData = [
     id: 'breakfast', title: 'Breakfast', items: [
       { id: 'b1', name: 'Fast Breakfast', weight: '450 GR', description: '1 Boiled Egg, 2 Borek Roll, Gouda Cheese, White Cheese, Black and Green Olives, Lettuce, Tomatoes, Cucumber, Ajvar, Honey, Butter, Bread', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/36f492d9ae1187852e4e25e4f498ad0f.jpg' },
       { id: 'b7', name: 'Burek Plate', weight: '450 GR', description: '1 Boiled Egg, 2 Borek Roll, Gouda Cheese, White Cheese, Black and Green Olives, Lettuce, Tomatoes, Cucumber, Ajvar, Honey, Butter, Bread', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/8650dde00739c140313f17a0e7d336bb.png' },
-      { id: 'b9', name: 'Priganice Plate', weight: '450 GR', description: '10 Pişi, Cheese, Honey with Butter, Jam', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/47579aa3227067c69e4bbaf62b339b97.png' },
+      { id: 'b9', name: 'Priganice Plate', weight: '450 GR', description: '10 Pişi, Cheese, Honey with Butter, Jam', price: 5.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/47579aa3227067c69e4bbaf62b339b97.png' },
       { id: 'b2', name: 'Menemen', weight: '250 GR', description: 'Tomato, Green Pepper, 2 Eggs, Bread', price: 5.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/06a4888c757b627471b3c9bd739724dc.jpg' },
       { id: 'b3', name: 'Plain Egg', weight: '150 GR', description: '3 Eggs, Bread', price: 4.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/445ba067a2b85fdd92c39bb000fc0182.jpg' },
       { id: 'b4', name: 'Egg With Sausage', weight: '180 GR', description: '3 Eggs, Sausage, Bread', price: 5.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/8709c7d90c379fa33258c7ca7dbc1a0d.jpg' },
@@ -59,7 +59,7 @@ const kitchenData = [
       { id: 'c5', name: 'Mushroom Chicken', weight: '400 GR', description: 'Chicken, Peppers, Cream, Mushroom, Tortilla Bread, Salad ', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/d4c0b638559af7f047bf9ba520145293.png' },
       { id: 'c6', name: 'Chili Souce Chicken', weight: '400 GR', description: 'Chicken, Peppers, Cream, Chilli Sauce, Mushroom, French Fries, Salad ', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/d4c0b638559af7f047bf9ba520145293.png' },
       { id: 'c7', name: 'Chicken Saute', weight: '400 GR', description: 'Chicken, Peppers, Cream, Chilli Sauce, Mushroom, French Fries, Salad ', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/d4c0b638559af7f047bf9ba520145293.png' },
-      { id: 'c8', name: 'Chicken Saute', weight: '400 GR', description: 'Chicken, Peppers, Cream, Chilli Sauce, Mushroom, French Fries, Salad ', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/d9166acb6031980d3e8764d0c8633307.png' },
+      { id: 'c8', name: 'Chicken Dream', weight: '400 GR', description: 'Chicken, Peppers, Cream, Cheddar, Mushroom, French Fries, Special Chicken Souce ', price: 7.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/d9166acb6031980d3e8764d0c8633307.png' },
     ]
   },
   {
@@ -218,9 +218,9 @@ const alcoholData = [
 const dessertData = [
   {
     id: 'dessert-sub', title: 'Dessert', items: [
-      { id: 's1', name: 'Mozaic Cake', description: 'Rich chocolate cake with ganache', price: 7.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/0ee365d76af479cbde68c15451776dff.jpg' },
-      { id: 's2', name: 'Choclate Cokie', description: 'Classic Italian dessert with mascarpone', price: 8.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/1c099359d34a55d109c13fb4d0c7412e.jpg' },
-      { id: 's3', name: 'Carrot Cake', description: 'Creamy cheesecake with berry topping', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/9d596ad5834b7240fd18c37d3da93543.jpg' },
+      { id: 's1', name: 'Mozaic Cake', description: 'Rich chocolate cake with ganache', price: 4.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/0ee365d76af479cbde68c15451776dff.jpg' },
+      { id: 's2', name: 'Choclate Cokie', description: 'Classic Italian dessert with mascarpone', price: 2.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/1c099359d34a55d109c13fb4d0c7412e.jpg' },
+      { id: 's3', name: 'Carrot Cake', description: 'Creamy cheesecake with berry topping', price: 4.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/9d596ad5834b7240fd18c37d3da93543.jpg' },
     ]
   }
 ];
