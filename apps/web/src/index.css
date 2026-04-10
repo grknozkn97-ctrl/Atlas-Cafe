@@ -1,0 +1,104 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;600&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 33% 98%; /* Warm Cream */
+    --foreground: 24 10% 10%; /* Deep Brown/Black */
+    --card: 0 0% 100%;
+    --card-foreground: 24 10% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 24 10% 10%;
+    --primary: 24 45% 35%; /* Rich Brown */
+    --primary-foreground: 40 33% 98%;
+    --secondary: 38 40% 85%; /* Soft Gold/Beige */
+    --secondary-foreground: 24 10% 10%;
+    --muted: 38 20% 92%;
+    --muted-foreground: 24 10% 40%;
+    --accent: 38 40% 85%;
+    --accent-foreground: 24 10% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 40 33% 98%;
+    --border: 38 20% 85%;
+    --input: 38 20% 85%;
+    --ring: 24 45% 35%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 24 10% 10%;
+    --foreground: 40 33% 98%;
+    --card: 24 10% 14%;
+    --card-foreground: 40 33% 98%;
+    --popover: 24 10% 14%;
+    --popover-foreground: 40 33% 98%;
+    --primary: 38 40% 75%;
+    --primary-foreground: 24 10% 10%;
+    --secondary: 24 10% 20%;
+    --secondary-foreground: 40 33% 98%;
+    --muted: 24 10% 20%;
+    --muted-foreground: 38 20% 70%;
+    --accent: 24 10% 20%;
+    --accent-foreground: 40 33% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 40 33% 98%;
+    --border: 24 10% 20%;
+    --input: 24 10% 20%;
+    --ring: 38 40% 75%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 80px; /* Account for sticky nav (~60px) + padding */
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'DM Sans', sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Lora', serif;
+    @apply text-balance;
+  }
+}
+
+@layer utilities {
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Hide Hostinger platform branding and injected elements */
+.hostinger-branding,
+#hostinger-footer,
+.hostinger-footer,
+.use-template-button,
+#use-template-button,
+[class*="hostinger"],
+[id*="hostinger"],
+[class*="use-template"],
+[id*="use-template"],
+[class*="created-with"],
+[id*="created-with"],
+.platform-branding,
+#platform-branding {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  pointer-events: none !important;
+}
