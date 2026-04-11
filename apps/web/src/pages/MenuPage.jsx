@@ -92,8 +92,8 @@ const kitchenData = [
   },
   {
     id: 'Wrap', title: 'Wrap', items: [
-      { id: 'wr1', name: 'Crispy Chicken Wrap', weight: '300 GR', description: 'Crispy Chicken, Lettuce, Burger Souse, Pickle, Caramelized Onion, Cheddar Cheese, Ketchup, Mayonaise, French Fries', price: 6.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/ab4ba18acf7d203d8eb5e28377284beb.png' },
-      { id: 'wr2', name: 'Chikcken Wrap', weight: '350 GR', description: 'Chicken Fillet, Lettuce, Peppers, Tomato, Onion, Green Pepper, Sweet Corn, Black Olive', price: 6.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/c66d0cbc2a2c023bfd2d1a869d3d4ae3.png' },
+      { id: 'wr1', name: 'Crispy Chicken Wrap', weight: '300 GR', description: 'Crispy Chicken, Lettuce, Burger Souse, Pickle, Caramelized Onion, Cheddar Cheese, Ketchup, Mayonaise, French Fries', price: 6.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/ab4ba18acf7d203d8eb5e28377284beb.png' },
+      { id: 'wr2', name: 'Chikcken Wrap', weight: '350 GR', description: 'Chicken Fillet, Lettuce, Peppers, Tomato, Onion, Gouda, Green Pepper, Ketchup, Mayonaise, French Fries', price: 6.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/c66d0cbc2a2c023bfd2d1a869d3d4ae3.png' },
     ]
   }
 ];
