@@ -10,8 +10,8 @@ const kitchenData = [
   {
     id: 'breakfast', title: 'Breakfast', items: [
       { id: 'b1', name: 'Fast Breakfast', weight: '450 GR', description: '1 Boiled Egg, 2 Borek Roll, Gouda Cheese, White Cheese, Black and Green Olives, Lettuce, Tomatoes, Cucumber, Ajvar, Honey, Butter, Bread', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/36f492d9ae1187852e4e25e4f498ad0f.jpg' },
-      { id: 'b7', name: 'Burek Plate', weight: '450 GR', description: '10 Burek, Tomato, Cucumber, Ajvar, Honey with butter', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/8650dde00739c140313f17a0e7d336bb.png' },
-      { id: 'b9', name: 'Priganice Plate', weight: '450 GR', description: '10 Pişi, Cheese, Honey with Butter, Jam', price: 5.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/47579aa3227067c69e4bbaf62b339b97.png' },
+      { id: 'b7', name: 'Cheese Borek Rools', weight: '450 GR', description: '10 Burek, Tomato, Cucumber, Ajvar, Honey with butter', price: 5.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/8650dde00739c140313f17a0e7d336bb.png' },
+      { id: 'b9', name: 'Priganice Plate', weight: '450 GR', description: '10 Pişi, Cheese, Honey with Butter, Jam', price: 5.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/47579aa3227067c69e4bbaf62b339b97.png' },
       { id: 'b2', name: 'Menemen', weight: '250 GR', description: 'Tomato, Green Pepper, 2 Eggs, Bread', price: 5.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/06a4888c757b627471b3c9bd739724dc.jpg' },
       { id: 'b3', name: 'Plain Egg', weight: '150 GR', description: '3 Eggs, Bread', price: 4.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/445ba067a2b85fdd92c39bb000fc0182.jpg' },
       { id: 'b4', name: 'Egg With Sausage', weight: '180 GR', description: '3 Eggs, Sausage, Bread', price: 5.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/8709c7d90c379fa33258c7ca7dbc1a0d.jpg' },
@@ -24,13 +24,13 @@ const kitchenData = [
     id: 'toast', title: 'Toast', items: [
       { id: 't1', name: 'Toast With Cheese', weight: '200 GR', description: 'Gouda, Tomato, Butter, Bread, French Fries', price: 4.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/46014728a1316e8e5dc570f4c75b4124.png' },
       { id: 't2', name: 'Atlas Toast', weight: '250 GR', description: 'Gouda, Sausage, Tomato, Ajvar, Butter, Bread, French Fries', price: 5.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/3f4df46b79115ef6eb2829e539d9527d.png' },
-      { id: 't3', name: 'Golden Egg Toast', weight: '250 GR', description: '2 Eggs, Tomato, Gouda, Lettuce, 2 Toast Bread, French Fries', price: 5.80, image: 'https://goldentruffle.com/wp-content/uploads/2022/06/finished-ham-and-egg-sandwich-1-500x500.jpg' },
+      { id: 't3', name: 'Golden Egg Toast', weight: '250 GR', description: '2 Eggs, Tomato, Gouda, Ham, Lettuce, 2 Toast Bread, French Fries', price: 5.80, image: 'https://goldentruffle.com/wp-content/uploads/2022/06/finished-ham-and-egg-sandwich-1-500x500.jpg' },
     ]
   },
   {
     id: 'Sandwich', title: 'Sandwich', items: [
       { id: 'snd1', name: 'Cheddar Cheese Sandwich', weight: '200 GR', description: 'Gouda, Cheddar, Ham, Lettuce, Cheese, Mayonnaise, Toast Bread, French Fries', price: 5.50, image: 'https://parade.com/.image/c_fill,w_1200,h_1200,g_faces:center/ODowMDAwMDAwMDAwNzYyMTQ5/gettyimages-1414766514.jpg' },
-      { id: 'snd2', name: 'Tuna Sandwich', weight: '250 GR', description: 'Tuna, Sweet Corn, Pickle, Mayonnaise, Toast Bread, French Fries', price: 5.00, image: 'https://www.allrecipes.com/thmb/zjRwL5yyBrIIirnMjPEpm4xUXQU=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/98579-barbies-tuna-salad-DDMFS-4x3-f035868432e14a479ca4bc349011bf19.jpg' },
+      { id: 'snd2', name: 'Tuna Sandwich', weight: '250 GR', description: 'Tuna, Lettuce, Sweet Corn, Pickle, Mayonnaise, Toast Bread, French Fries', price: 5.00, image: 'https://www.allrecipes.com/thmb/zjRwL5yyBrIIirnMjPEpm4xUXQU=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/98579-barbies-tuna-salad-DDMFS-4x3-f035868432e14a479ca4bc349011bf19.jpg' },
     ]
   },
   {
@@ -38,28 +38,28 @@ const kitchenData = [
       { id: 'sn1', name: 'French Fries', weight: '300 GR', description: 'French Fries, Ketchup, Mayonnaise', price: 4.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/0cb7828d1500db277ce9ecac4242821a.jpg' },
       { id: 'sn5', name: 'Cheedar French Fries', weight: '300 GR', description: 'Chedar Cheese, French Fries, Ketchup, Mayonnaise', price: 5.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/c0e34ae7ea211eefaf66ba5b2a250602.jpg' },
       { id: 'sn2', name: 'French Fries With Sausage', weight: '350 GR', description: 'French Fries and Sausage, Ketchup, Mayonnaise', price: 5.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/e0160a7378f6853aac5cfdfda752d8fe.jpg' },
-      { id: 'sn3', name: 'Crispy Chicken', weight: '400 GR', description: 'French Fries, Crispy Chicken, Onion, Ketchup, Mayonnaise', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/d2640ddbb6d634235c33572a7ad58c6f.jpg' },
-      { id: 'sn4', name: 'Mega Mix', weight: '450 GR', description: 'French Fries, Onion, Crispy Chicken, Ketchup, Mayonnaise', price: 8.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/c38b83719384a779de47a34a7bb25905.jpg' }
+      { id: 'sn3', name: 'Crispy Chicken', weight: '400 GR', description: 'French Fries, Crispy Chicken, Ketchup, Mayonnaise', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/d2640ddbb6d634235c33572a7ad58c6f.jpg' },
+      { id: 'sn4', name: 'Mega Mix', weight: '450 GR', description: 'French Fries, Onion Rings, Sausage, Crispy Chicken, Ketchup, Mayonnaise', price: 8.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/c38b83719384a779de47a34a7bb25905.jpg' }
     ]
   },
   {
     id: 'pasta', title: 'Pasta', items: [
       { id: 'p1', name: 'Penne Alfredo', weight: '300 GR', description: 'Chicken, Mushroom, Cream, Penne Pasta, Parmesan', price: 5.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/75108d59c6639aefb2c7fee221d7e37c.png' },
       { id: 'p2', name: 'Curry Pasta', weight: '300 GR' ,description: 'Chicken, Curry Spice, Cream, Penne Pasta, Parmesan', price: 5.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/54fa5764abce867403da009356288714.png' },
-      { id: 'p3', name: 'Hot Chili Pasta', weight: '300 GR' ,description: 'Chicken, Pesto Souce, Cream, Penne Pasta, Parmesan', price: 5.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/d5b88a161a7bdfd2aafc1a26c2eebbfd.png' },
-      { id: 'p4', name: 'Pesto Pasta', weight: '300 GR', description: 'Chicken, Chili Souce, Cream, Penne Pasta, Parmesan', price: 5.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/125713a028b1a66bd7da0262823670b6.png' },
+      { id: 'p3', name: 'Hot Chili Pasta', weight: '300 GR' ,description: 'Chicken, Chili Souce, Cream, Penne Pasta, Parmesan', price: 5.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/d5b88a161a7bdfd2aafc1a26c2eebbfd.png' },
+      { id: 'p4', name: 'Pesto Pasta', weight: '300 GR', description: 'Chicken, Pesto Souce, Cream, Penne Pasta, Parmesan', price: 5.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/125713a028b1a66bd7da0262823670b6.png' },
     ]
   },
   {
     id: 'chicken', title: 'Chicken', items: [
       { id: 'c1', name: 'Chicken Cokertme', weight: '400 GR', description: 'Chicken Fillet, Crispy Pototoes, Yogurt, Tomato Source', price: 7.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/4b78331b17c3f0165cc19181cfb052ff.png' },
-      { id: 'c2', name: 'Chicken Fajita', weight: '400 GR', description: 'Chicken, Peppers, Mushroom, Onion, Spices, Tortilla Bread, Sweet Chili Souce, Mayonnaise', price: 7.50, image: 'https://www.thecookierookie.com/wp-content/uploads/2023/03/featured-chicken-fajitas-recipe.jpg' },
-      { id: 'c3', name: 'Chicken Grill', weight: '400 GR', description: 'Chicken, Green Pepper, Rice, French Fries', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/4435bff0676640268870b84e134729c4.png' },
-      { id: 'c4', name: 'Curry Sauce Chicken', weight: '400 GR', description: 'Chicken, Peppers, Cream, Curry Spice, Mushroom, Salad ', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/02879ea32ab13f31682d92922137dc39.png' },
+      { id: 'c2', name: 'Chicken Fajita', weight: '400 GR', description: 'Chicken, Peppers, Onion, Spices, Tortilla Bread, Sweet Chili Souce, Mayonnaise', price: 7.50, image: 'https://www.thecookierookie.com/wp-content/uploads/2023/03/featured-chicken-fajitas-recipe.jpg' },
+      { id: 'c3', name: 'Chicken Grill', weight: '400 GR', description: 'Chicken, Green Pepper, Rice, French Fries, Salad', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/4435bff0676640268870b84e134729c4.png' },
+      { id: 'c4', name: 'Curry Sauce Chicken', weight: '400 GR', description: 'Chicken, Peppers, Cream, Curry Spice, Mushroom, Salad, French Fries ', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/02879ea32ab13f31682d92922137dc39.png' },
       { id: 'c5', name: 'Mushroom Chicken', weight: '400 GR', description: 'Chicken, Peppers, Cream, Mushroom, Tortilla Bread, Salad ', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/d4c0b638559af7f047bf9ba520145293.png' },
       { id: 'c6', name: 'Chili Souce Chicken', weight: '400 GR', description: 'Chicken, Peppers, Cream, Chilli Sauce, Mushroom, French Fries, Salad ', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/d4c0b638559af7f047bf9ba520145293.png' },
       { id: 'c7', name: 'Chicken Saute', weight: '400 GR', description: 'Chicken, Peppers, Cream, Chilli Sauce, Mushroom, French Fries, Salad ', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/d4c0b638559af7f047bf9ba520145293.png' },
-      { id: 'c8', name: 'Chicken Dream', weight: '400 GR', description: 'Chicken, Peppers, Cream, Cheddar, Mushroom, French Fries, Special Chicken Souce ', price: 7.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/d9166acb6031980d3e8764d0c8633307.png' },
+      { id: 'c8', name: 'Chicken Dream', weight: '400 GR', description: 'Chicken, Cream, Cheddar, Mushroom, French Fries, Special Chicken Souce ', price: 7.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/d9166acb6031980d3e8764d0c8633307.png' },
     ]
   },
   {
@@ -78,22 +78,22 @@ const kitchenData = [
   },
   {
     id: 'Hamburger', title: 'Hamburger', items: [
-      { id: 'hm1', name: 'Classic Hamburger', weight: '300 GR', description: 'Lettuce, Tomato, Cucumber, Green Pepper, Sweet Corn, Black Olive, Salad Dressing', price: 4.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/8d3288a2a52bba2078ee389732c61f0c.png' },
-      { id: 'hm2', name: 'Cheeseburger', weight: '350 GR', description: 'Chicken Fillet, Lettuce, Tomato, Cucumber, Green Pepper, Sweet Corn, Black Olive, Salad Dressing', price: 5.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/f47d08951fd4d8f9ffe1fdea5cde7f17.png' },
-      { id: 'hm3', name: 'Chefs burger', weight: '380 GR', description: 'Crispy Chicken, Lettuce, Tomato, Cucumber, Green pepper, Sweet Corn, Black Olive, Salad Dressing', price: 5.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/d661e13ae262986cd86e48185f983ee2.png' },
+      { id: 'hm1', name: 'Classic Hamburger', weight: '300 GR', description: 'Meatball, Lettuce, Toamato, Burger Souse, Peckle, Gouda, Ketchup, Mayonaise, French Fries, Onion Rings', price: 6.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/8d3288a2a52bba2078ee389732c61f0c.png' },
+      { id: 'hm2', name: 'Cheeseburger', weight: '350 GR', description: 'Meatball, Lettuce, Burger Souse, Pickle, Cheddar, Ketchup, Mayonaise, French Fries', price: 6.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/f47d08951fd4d8f9ffe1fdea5cde7f17.png' },
+      { id: 'hm3', name: 'Chefs burger', weight: '380 GR', description: 'Meatball, lettuce, Caramelized Onion, Crispy Potatoes, Burger Souse, Pickle, Ketchup, Mayonaise, Onion Rings, French Fries', price: 7.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/d661e13ae262986cd86e48185f983ee2.png' },
     ]
   },
   {
     id: 'Pizza', title: 'Pizza', items: [
-      { id: 'pz1', name: 'Margarita', weight: '300 GR', description: 'Napoliten Souce, Gouda, Tomato, Roka, Parmesan', price: 6.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/60b6ff8d3aa6942171ca50a156d8b2ff.png' },
-      { id: 'pz2', name: 'Mix', weight: '350 GR', description: 'Napoliten Souce, Peppers, Tomato, Sousage, Mushroom, Black Olives', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/f43a3d002e144cee15d13bca8d1c85d3.png' },
-      { id: 'pz3', name: 'Berbeque Chicken', weight: '350 GR', description: 'Chicken Fillet, Barbeque Souce, Onion, Mozerella, Ketchup, Mayonnaise, French Fries', price: 7.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/c1524c1c306b3f11d9d74101e53ce9c3.png' },
+      { id: 'pz1', name: 'Margarita', weight: '300 GR', description: 'Napoliten Souce, Mozarella Cheese, Tomato, Roka, Parmesan', price: 6.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/60b6ff8d3aa6942171ca50a156d8b2ff.png' },
+      { id: 'pz2', name: 'Mix', weight: '350 GR', description: 'Napoliten Souce, Peppers,Mozarella Cheese, Tomato, Sousage, Mushroom, Black Olives, Roka, Parmesan', price: 7.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/c1524c1c306b3f11d9d74101e53ce9c3.png' },
+      { id: 'pz3', name: 'Barbeque Chicken', weight: '350 GR', description: 'Chicken Fillet, Barbeque Souce, Onion, Mozerella', price: 7.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/f43a3d002e144cee15d13bca8d1c85d3.png' },
     ]
   },
   {
     id: 'Wrap', title: 'Wrap', items: [
-      { id: 'wr1', name: 'Crispy Chicken Wrap', weight: '300 GR', description: 'Lettuce, Tomato, Cucumber, Green Pepper, Sweet Corn, Black Olive, Salad Dressing', price: 6.00, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/ab4ba18acf7d203d8eb5e28377284beb.png' },
-      { id: 'wr2', name: 'Chikcken Wrap', weight: '350 GR', description: 'Chicken Fillet, Lettuce, Tomato, Cucumber, Green Pepper, Sweet Corn, Black Olive, Salad Dressing', price: 6.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/c66d0cbc2a2c023bfd2d1a869d3d4ae3.png' },
+      { id: 'wr1', name: 'Crispy Chicken Wrap', weight: '300 GR', description: 'Crispy Chicken, Lettuce, Burger Souse, Pickle, Caramelized Onion, Cheddar Cheese, Ketchup, Mayonaise, French Fries', price: 6.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/ab4ba18acf7d203d8eb5e28377284beb.png' },
+      { id: 'wr2', name: 'Chikcken Wrap', weight: '350 GR', description: 'Chicken Fillet, Lettuce, Peppers, Tomato, Onion, Green Pepper, Sweet Corn, Black Olive', price: 6.50, image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/c66d0cbc2a2c023bfd2d1a869d3d4ae3.png' },
     ]
   }
 ];
