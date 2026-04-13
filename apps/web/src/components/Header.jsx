@@ -9,7 +9,7 @@ const Header = () => {
 
           {/* Sofistike Font Tasarımı */}
           <h1 className="text-xl sm:text-2xl font-serif font-bold tracking-[0.15em] uppercase text-foreground drop-shadow-sm transition-all duration-300">
-            Good Food... Good Mood...
+            ATLAS
           </h1>
 
           {/* Zarif Google Değerlendirme Butonu */}
