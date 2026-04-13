@@ -2,19 +2,20 @@ import React from 'react';
 
 const Header = () => {
   return (
-    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-md border-b border-border/40 shadow-sm">
+    {/* sticky, top-0 ve z-50 sınıflarını kaldırdık. Artık sayfa ile birlikte yukarı kayacak. */}
+    <header className="w-full bg-background/95 border-b border-border/40 shadow-sm">
       <div className="container mx-auto px-4 py-3">
         {/* Ana Taşıyıcı: Logo ve Metinleri ortalar */}
         <div className="flex flex-col items-center justify-center">
           
           {/* Logo ve Marka Grubu */}
           <div className="flex items-center gap-3 mb-1">
-            {/* LOGO BURAYA: src kısmına logonu ekleyebilirsin */}
+            {/* LOGO BURAYA */}
             <img 
-              src="/logo.png" // public klasöründeki logo dosyanın adı
+              src="/logo.png" 
               alt="Atlas Cafe Logo" 
-              className="w-10 h-10 object-contain" // Boyutu buradan ayarlayabilirsin
-              onError={(e) => e.target.style.display = 'none'} // Logo yoksa alanı gizler
+              className="w-10 h-10 object-contain" 
+              onError={(e) => e.target.style.display = 'none'} 
             />
             
             <h1 className="text-2xl font-serif font-bold tracking-[0.2em] uppercase text-foreground">
