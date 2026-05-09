@@ -43,7 +43,7 @@ const Header = () => {
         {/* Sol: Logo */}
         <a href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}>
           <img
-            src="/Atlas Trspr"
+            src="/Atlas Trspr.jpg"
             alt="Atlas Cafe"
             style={{ height: '48px', width: 'auto', objectFit: 'contain' }}
           />
