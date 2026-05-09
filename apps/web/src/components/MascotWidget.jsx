@@ -175,19 +175,19 @@ export default function MascotWidget() {
       onClick={handleClick}
       style={{
         position: 'fixed',
-        bottom: 8,
-        right: 8,
+        bottom: 0,
+        right: 0,
         zIndex: 9999,
-        width: '100px',
-        height: '220px',
+        width: "50px",
+        height: '110px',
         cursor: phase === 'holding' ? 'pointer' : 'default',
         userSelect: 'none',
         WebkitTapHighlightColor: 'transparent',
       }}
     >
       <svg
-        width="100"
-        height="220"
+        width="50"
+        height="110"
         viewBox="0 0 100 220"
         xmlns="http://www.w3.org/2000/svg"
         overflow="visible"
