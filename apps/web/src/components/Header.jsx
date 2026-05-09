@@ -47,7 +47,7 @@ const Header = () => {
           style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', justifyContent: 'flex-start' }}
         >
           <img
-            src="/Atlas Trspr.png"
+            src="/Atlas Trspr.jpg"
             alt="Atlas Cafe"
             style={{ height: '52px', width: 'auto', objectFit: 'contain' }}
           />
