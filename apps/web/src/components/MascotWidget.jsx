@@ -1,395 +1,396 @@
 import React, { useState, useEffect, useRef } from 'react';
-
+ 
 const SIGNS = [
-  { id: 'instagram', line1: '📸 Fallow Me', line2: 'Instagram', bg: '#E1306C', color: '#fff', href: 'https://instagram.com/atlascafe.me' },
-  { id: 'google',    line1: '⭐ Use Rate', line2: 'Google',    bg: '#4285F4', color: '#fff', href: 'https://share.google/gx9QBu5N87yWGipUd' },
+  { id: 'instagram', line1: '📸 Follow Us', line2: 'Instagram', bg: '#E1306C', color: '#fff', href: 'https://www.instagram.com/atlascafefoodbar/' },
+  { id: 'google',    line1: '⭐ Rate Us',   line2: 'Google',    bg: '#4285F4', color: '#fff', href: 'https://share.google/gx9QBu5N87yWGipUd' },
 ];
-
+ 
+// ── Faz listesi ──────────────────────────────────────────────────
+// falling → squash → standup → lookAround → pickUp → raising → holding
+// → (10s idle) → tired → sleeping → waking → excited → raising → holding
+ 
 export default function MascotWidget() {
-  // Animasyon fazları
-  const [phase, setPhase] = useState('falling');
+  const [phase, setPhase]     = useState('falling');
   const [signIdx, setSignIdx] = useState(0);
-  const [signAngle, setSignAngle] = useState(-2); 
-  
-  const sequenceRef = useRef(null);
-  const idleRef = useRef(null);
-  const waveRef = useRef(null);
-  const zRef = useRef(null);
-  const [zf, setZf] = useState(0);
-
-  // ZZZ Efekti
+  const [blink, setBlink]     = useState(false);
+  const [zf, setZf]           = useState(0);       // zzz frame 0/1/2
+  const [signAngle, setSignAngle] = useState(-2);  // pankart sallanma açısı
+  const idleRef  = useRef(null);
+  const cycleRef = useRef(null);
+  const zRef     = useRef(null);
+  const waveRef  = useRef(null);
+ 
+  // Göz kırpma
+  useEffect(() => {
+    const t = setInterval(() => {
+      if (!['sleeping','waking','squash'].includes(phase)) {
+        setBlink(true); setTimeout(() => setBlink(false), 120);
+      }
+    }, 2600);
+    return () => clearInterval(t);
+  }, [phase]);
+ 
+  // Pankart + eller birlikte sallanma
+  useEffect(() => {
+    if (phase === 'holding') {
+      waveRef.current = setInterval(() => {
+        setSignAngle(a => a === -2 ? 3 : -2);
+      }, 900);
+    } else {
+      clearInterval(waveRef.current);
+      setSignAngle(-2);
+    }
+    return () => clearInterval(waveRef.current);
+  }, [phase]);
+ 
+  // ZZZ
   useEffect(() => {
     if (phase === 'sleeping') {
-      zRef.current = setInterval(() => setZf(p => (p + 1) % 3), 600);
+      zRef.current = setInterval(() => setZf(p => (p + 1) % 3), 650);
     } else {
       clearInterval(zRef.current); setZf(0);
     }
     return () => clearInterval(zRef.current);
   }, [phase]);
-
-  // Pankart sallama
-  useEffect(() => {
-    if (phase === 'holding') {
-      waveRef.current = setInterval(() => setSignAngle(a => a === -2 ? 3 : -2), 1000);
-    } else {
-      clearInterval(waveRef.current);
-      setSignAngle(0);
-    }
-    return () => clearInterval(waveRef.current);
-  }, [phase]);
-
-  const go = (p) => setPhase(p);
-
-  // 🎬 YÖNETMEN KOLTUĞU: Ana Hikaye Akışı
-  const startSequence = () => {
-    clearTimeout(sequenceRef.current);
-    clearTimeout(idleRef.current);
-
-    go('falling');                                  // 1. Düşüş
-    setTimeout(() => go('crash'), 500);             // 2. Çarpma ve pankartı düşürme
-    setTimeout(() => go('recovery'), 1200);         // 3. Yerde sersemlik
-    setTimeout(() => go('standup'), 2200);          // 4. Ayağa kalkma
-    setTimeout(() => go('lookLeft'), 3000);         // 5. Sola bak (Pankart nerede?)
-    setTimeout(() => go('lookRight'), 4000);        // 6. Sağa bak
-    setTimeout(() => go('spotSign'), 5000);         // 7. Pankartı gör (!)
-    setTimeout(() => go('pickUp'), 5800);           // 8. Eğilip al
-    setTimeout(() => go('raising'), 6500);          // 9. Doğrul
-    setTimeout(() => { 
-      go('holding');                                // 10. Salla
-      startIdleTimer();                             // Sıkılma sayacını başlat
-    }, 7200);
-  };
-
-  // ⏱ SIKILMA VE UYKU SAYACI
-  const startIdleTimer = () => {
+ 
+  // ── Sahne akışı ──────────────────────────────────────────────
+  const go = (p, delay = 0) => delay ? setTimeout(() => setPhase(p), delay) : setPhase(p);
+ 
+  const resetIdle = () => {
     clearTimeout(idleRef.current);
     idleRef.current = setTimeout(() => {
-      go('bored');                                  // 10 sn sonra: Sıkılma (İç çekme)
+      clearTimeout(cycleRef.current);
+      go('lowering');
       setTimeout(() => {
-        go('walkingToCorner');                      // Köşeye yönelme
+        go('sleeping');
         setTimeout(() => {
-          go('sleeping');                           // Yere yatıp uyuma
-          
-          // 5 Saniye Uyu, Sonra Uyan
+          go('waking');
           setTimeout(() => {
-            go('waking');                           // Gözünü ovuşturarak uyanma
+            go('excited');
             setTimeout(() => {
-              go('standup');                        // Kalk
-              setSignIdx(p => (p + 1) % SIGNS.length); // Diğer tabelayı al
-              setTimeout(() => go('pickUp'), 800);
-              setTimeout(() => go('raising'), 1500);
-              setTimeout(() => {
-                go('holding');
-                startIdleTimer();                   // Döngüyü tekrar başlat
-              }, 2200);
-            }, 1000);
-          }, 5000); // 5 saniye uyku
-
-        }, 800);
-      }, 1000);
-    }, 10000); // 10 saniye bekleme süresi
+              go('pickUp');
+              setTimeout(() => { go('raising'); setTimeout(() => { go('holding'); resetIdle(); startCycle(); }, 600); }, 700);
+            }, 600);
+          }, 1200);
+        }, 5000);
+      }, 500);
+    }, 10000);
   };
-
-  // İlk yüklemede hikayeyi başlat
+ 
+  const startCycle = () => {
+    clearTimeout(cycleRef.current);
+    cycleRef.current = setTimeout(() => {
+      go('lowering');
+      setTimeout(() => {
+        setSignIdx(p => (p + 1) % SIGNS.length);
+        go('raising');
+        setTimeout(() => { go('holding'); resetIdle(); startCycle(); }, 600);
+      }, 500);
+    }, 4500);
+  };
+ 
+  // Başlangıç sekansı: fall → squash → standup → lookAround → pickUp → raising → holding
   useEffect(() => {
-    startSequence();
-    return () => { clearTimeout(sequenceRef.current); clearTimeout(idleRef.current); };
+    go('falling');
+    setTimeout(() => go('squash'),    600);
+    setTimeout(() => go('standup'),  1200);
+    setTimeout(() => go('lookAround'), 1700);
+    setTimeout(() => go('pickUp'),   3200);
+    setTimeout(() => go('raising'),  3900);
+    setTimeout(() => { go('holding'); resetIdle(); startCycle(); }, 4600);
+    return () => { clearTimeout(idleRef.current); clearTimeout(cycleRef.current); clearInterval(zRef.current); clearInterval(waveRef.current); };
   }, []);
-
+ 
   const handleClick = () => {
-    if (phase === 'holding') {
-      window.open(SIGNS[signIdx].href, '_blank');
-    } else if (phase === 'sleeping' || phase === 'waking' || phase === 'bored') {
-      // Uyurken tıklanırsa korkarak uyan ve hemen işe dön
-      clearTimeout(idleRef.current);
-      clearTimeout(sequenceRef.current);
-      go('shocked');
-      setTimeout(() => go('standup'), 600);
-      setTimeout(() => go('pickUp'), 1100);
-      setTimeout(() => go('raising'), 1600);
-      setTimeout(() => { go('holding'); startIdleTimer(); }, 2100);
+    if (phase === 'sleeping' || phase === 'waking') {
+      clearTimeout(idleRef.current); clearTimeout(cycleRef.current);
+      go('excited');
+      setTimeout(() => go('pickUp'), 600);
+      setTimeout(() => go('raising'), 1300);
+      setTimeout(() => { go('holding'); resetIdle(); startCycle(); }, 2000);
+      return;
     }
+    if (phase === 'holding') { resetIdle(); window.open(SIGNS[signIdx].href, '_blank'); }
   };
-
-  // ── DURUM KONTROLLERİ (Derivations) ──────────────────────────
-  const isFalling = phase === 'falling';
-  const isCrash = phase === 'crash';
-  const isRecovery = phase === 'recovery';
-  const isStandup = phase === 'standup';
-  const isLookLeft = phase === 'lookLeft';
-  const isLookRight = phase === 'lookRight';
-  const isSpotSign = phase === 'spotSign';
-  const isPickUp = phase === 'pickUp';
-  const isRaising = phase === 'raising';
-  const isHolding = phase === 'holding';
-  const isBored = phase === 'bored';
+ 
+  // ── Derived ──────────────────────────────────────────────────
+  const isFalling  = phase === 'falling';
+  const isSquash   = phase === 'squash';
+  const isLooking  = phase === 'lookAround';
   const isSleeping = phase === 'sleeping';
-  const isWaking = phase === 'waking';
-  const isShocked = phase === 'shocked';
-  const isWalking = phase === 'walkingToCorner';
-
-  const signDropped = ['crash','recovery','standup','lookLeft','lookRight','spotSign','waking','shocked'].includes(phase);
-  const bodyAsleep = isSleeping || isWalking;
-
-  // ── DİNAMİK STİLLER & KOORDİNATLAR ──────────────────────────
-  
-  // Karakter Transformasyonu (Zıplama, Yatırma)
-  let charY = 0; let charX = 0; let scaleY = 1; let scaleX = 1; let charRotate = 0;
-  let transitionStyle = 'all 0.5s cubic-bezier(0.34, 1.3, 0.64, 1)';
-
-  if (isFalling) { charY = -250; scaleY = 1.1; scaleX = 0.9; transitionStyle = 'all 0.5s ease-in'; }
-  else if (isCrash) { charY = 15; scaleY = 0.6; scaleX = 1.4; transitionStyle = 'all 0.1s ease-out'; }
-  else if (isRecovery) { charY = 5; scaleY = 0.95; }
-  else if (isBored) { charY = 2; scaleY = 0.98; }
-  else if (isWalking) { charX = -20; charY = 20; charRotate = -45; transitionStyle = 'all 0.8s ease-in'; }
-  else if (isSleeping) { charX = -45; charY = 50; charRotate = -85; transitionStyle = 'all 1s ease'; }
-  else if (isWaking) { charX = -30; charY = 30; charRotate = -40; }
-  else if (isShocked) { charY = -20; scaleY = 1.1; transitionStyle = 'all 0.2s ease-out'; }
-
-  // Baş Transformasyonu
-  let headX = 0; let headY = 0; let headRotate = 0;
-  if (isRecovery) { headY = 5; headRotate = 15; }
-  if (isLookLeft) { headX = -8; headRotate = -10; }
-  if (isLookRight) { headX = 10; headRotate = 15; }
-  if (isSpotSign) { headX = 12; headY = -2; headRotate = 20; }
-  if (isBored) { headY = 8; headRotate = -10; }
-  if (isPickUp) { headX = 15; headY = 25; headRotate = 35; } // Eğilirken kafa da eğilir
-
-  // Pankart Transformasyonu
-  let signGroupStyle = {
-    transform: isHolding ? `rotate(${signAngle}deg)` : 'rotate(0deg)',
-    transition: 'transform 0.4s ease',
-  };
-  
-  if (signDropped) {
-    // Yerde durma pozisyonu
-    signGroupStyle = { transform: 'translate(40px, 90px) rotate(80deg)', transition: 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)' };
-  } else if (isPickUp) {
-    // Eğilip alırken
-    signGroupStyle = { transform: 'translate(20px, 60px) rotate(40deg)', transition: 'all 0.4s ease' };
-  } else if (isBored || isWalking || bodyAsleep) {
-    // Sıkılıp yanına bırakma
-    signGroupStyle = { transform: 'translate(-30px, 100px) rotate(-70deg)', transition: 'all 0.8s ease' };
-  } else if (isFalling || isRaising) {
-    signGroupStyle = { transform: 'translate(0px, 0px) rotate(0deg)', transition: 'all 0.6s ease' };
-  }
-
-  // Kol Pozisyonları (Gerçekçi eğriler için Bezier yolları kullanıyoruz)
-  // Sağ kol d="..."
-  let rightArmPath = "M 66 128 Q 75 145, 60 88"; // Normal tutuş
-  let leftArmPath = "M 34 128 Q 25 145, 40 88";  // Normal tutuş
-
-  if (signDropped) {
-    if (isRecovery) {
-      rightArmPath = "M 66 128 Q 70 110, 55 100"; // Kafasını tutuyor
-      leftArmPath = "M 34 128 Q 20 150, 30 180";  // Yerde destek
-    } else if (isLookLeft || isLookRight) {
-      rightArmPath = "M 66 128 Q 80 150, 75 160"; // Aşağıda serbest
-      leftArmPath = "M 34 128 Q 20 150, 25 160";
-    }
-  }
-  if (isPickUp) {
-    rightArmPath = "M 66 135 Q 80 160, 95 190"; // Yere uzanıyor
-    leftArmPath = "M 34 135 Q 50 170, 85 185";  // Yere uzanıyor
-  }
-  if (isBored) {
-    rightArmPath = "M 66 128 Q 80 150, 70 170"; // Sarkık
-    leftArmPath = "M 34 128 Q 20 150, 30 170";
-  }
-  if (bodyAsleep) {
-    rightArmPath = "M 66 128 Q 80 120, 60 110"; // Uyurken yastık gibi
-    leftArmPath = "M 34 128 Q 20 120, 40 110";
-  }
-
+  const isWaking   = phase === 'waking';
+  const isExcited  = phase === 'excited';
+  const isPickUp   = phase === 'pickUp';
+  const signUp     = phase === 'holding';
+  const armsUp     = phase === 'raising' || phase === 'holding' || phase === 'lowering';
+ 
+  const asleep = isSleeping || isWaking;
   const sign = SIGNS[signIdx];
-
+ 
+  // Gövde eğimi (uyku)
+  const bodyTilt = isSleeping ? 22 : isWaking ? 10 : 0;
+  // Karakter Y (düşme)
+  const fallY = isFalling ? -180 : 0;
+  // Squash scale
+  const scaleY = isSquash ? 0.82 : 1;
+  const scaleX = isSquash ? 1.18 : 1;
+  // Zıplama
+  const jumpY = isExcited ? -14 : 0;
+  // Baş sola/sağa bakma offseti
+  const headX = isLooking ? -4 : 0;
+ 
+  // Kollar: armsUp → yukarı (eller sopa tutacak konumda)
+  // Sol omuz: (32,132), sopa sol: (43,88)
+  // Sağ omuz: (68,132), sopa sağ: (57,88)
+  // Aşağıda: sol (16,155), sağ (84,155)
+  // pickUp: eller yerde (sol:30,175) (sağ:70,175) sonra yukarı
+  const lx2 = isPickUp ? 30 : armsUp ? 43 : 16;
+  const ly2 = isPickUp ? 175 : armsUp ? 88 : 155;
+  const rx2 = isPickUp ? 70 : armsUp ? 57 : 84;
+  const ry2 = isPickUp ? 175 : armsUp ? 88 : 155;
+ 
+  // Pankart + eller aynı açıda döner
+  const waveTransform = `rotate(${signAngle}deg)`;
+ 
   return (
-    <div style={{
-      position: 'fixed', bottom: 20, right: 20, zIndex: 9999,
-      width: '120px', height: '160px', // Animasyon alanı genişletildi
-      cursor: isHolding ? 'pointer' : 'default',
+    <div onClick={handleClick} style={{
+      position: 'fixed', bottom: 0, right: 0, zIndex: 9999,
+      width: '50px', height: '110px',
+      cursor: phase === 'holding' ? 'pointer' : 'default',
       userSelect: 'none', WebkitTapHighlightColor: 'transparent',
-    }} onClick={handleClick}>
-      
-      <svg width="100%" height="100%" viewBox="0 0 150 250" overflow="visible">
-        <defs>
-          <radialGradient id="skin" cx="50%" cy="40%" r="60%">
-            <stop offset="0%" stopColor="#FAD6B1" />
-            <stop offset="100%" stopColor="#D99B6A" />
-          </radialGradient>
-          <linearGradient id="shirt" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#FFFFFF" />
-            <stop offset="100%" stopColor="#E0E0E0" />
-          </linearGradient>
-          <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feColorMatrix type="matrix" values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.2 0"/>
-            <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
-          </filter>
-        </defs>
-
-        {/* ── ZEMİN GÖLGESİ ── */}
-        <ellipse cx="60" cy="200" rx={isFalling ? 10 : 35} ry={isFalling ? 2 : 6} 
-          fill="black" opacity={isFalling ? 0 : 0.25} style={{ transition: 'all 0.5s ease' }} />
-
-        {/* ── ANA KARAKTER GRUBU ── */}
-        <g style={{
-          transform: `translate(${charX}px, ${charY}px) scale(${scaleX}, ${scaleY}) rotate(${charRotate}deg)`,
-          transformOrigin: '60px 190px',
-          transition: transitionStyle
+    }}>
+      <svg width="50" height="110" viewBox="0 0 100 220"
+        xmlns="http://www.w3.org/2000/svg" overflow="visible"
+        style={{
+          transform: `translateY(${fallY + jumpY}px) scaleX(${scaleX}) scaleY(${scaleY})`,
+          transformOrigin: 'bottom center',
+          transition: isFalling
+            ? 'transform 0.55s cubic-bezier(0.34,1.2,0.64,1)'
+            : 'transform 0.4s cubic-bezier(0.34,1.2,0.64,1)',
         }}>
-
-          {/* ── PANKART GRUBU (Bağımsız Hareket Edebilir) ── */}
-          <g style={signGroupStyle}>
-            {/* Pankart Zemin Göstergesi (Sadece yerdeyken) */}
-            {signDropped && <ellipse cx="50" cy="80" rx="40" ry="10" fill="black" opacity="0.15" />}
-            
-            {/* Tabela */}
-            <rect x="10" y="0" width="80" height="42" rx="6" fill={sign.bg} filter="url(#shadow)"/>
-            <rect x="12" y="2" width="76" height="38" rx="4" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2"/>
-            <text x="50" y="18" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#fff" opacity="0.9">{sign.line1}</text>
-            <text x="50" y="34" textAnchor="middle" fontSize="13" fontWeight="900" fill={sign.color}>{sign.line2}</text>
-            {/* Sopa */}
-            <path d="M 48 42 L 48 88 L 52 88 L 52 42 Z" fill="#6F4E37"/>
-            <path d="M 50 42 L 50 88" stroke="#4A3020" strokeWidth="1" opacity="0.6"/>
-
-            {/* Eller (Sadece tutarken görünür) */}
-            <g style={{ opacity: (signDropped || isBored || bodyAsleep || isPickUp) ? 0 : 1, transition: 'opacity 0.2s' }}>
-              <circle cx="40" cy="84" r="6" fill="url(#skin)" stroke="#B8734A" strokeWidth="0.5"/>
-              <circle cx="60" cy="84" r="6" fill="url(#skin)" stroke="#B8734A" strokeWidth="0.5"/>
-            </g>
-          </g>
-
-          {/* ── VÜCUT ── */}
-          {/* Sol Bacak */}
-          <path d={isRecovery || bodyAsleep ? "M 48 160 Q 30 170, 25 185" : "M 48 160 Q 45 175, 42 190"} 
-                fill="none" stroke="#2B1A10" strokeWidth="9" strokeLinecap="round" style={{ transition: 'all 0.4s' }}/>
-          {/* Sağ Bacak */}
-          <path d={isRecovery || bodyAsleep ? "M 52 160 Q 75 165, 80 185" : "M 52 160 Q 55 175, 58 190"} 
-                fill="none" stroke="#2B1A10" strokeWidth="9" strokeLinecap="round" style={{ transition: 'all 0.4s' }}/>
-          {/* Ayakkabılar */}
-          <path d={isRecovery || bodyAsleep ? "M 20 185 Q 25 180, 30 185 Q 30 195, 20 195 Z" : "M 35 190 Q 42 185, 49 190 Q 49 198, 35 198 Z"} fill="#1A1A1A" style={{ transition: 'all 0.4s' }}/>
-          <path d={isRecovery || bodyAsleep ? "M 75 185 Q 80 180, 85 185 Q 85 195, 75 195 Z" : "M 51 190 Q 58 185, 65 190 Q 65 198, 51 198 Z"} fill="#1A1A1A" style={{ transition: 'all 0.4s' }}/>
-
-          {/* Gövde - Pantolon */}
-          <path d="M 38 150 L 62 150 L 58 168 L 42 168 Z" fill="#2B1A10" stroke="#1A1A1A" strokeWidth="1"/>
-          {/* Gövde - Gömlek (Gerçekçi Kıvrımlar) */}
-          <path d={isPickUp ? "M 35 120 L 75 130 L 70 155 L 38 155 Z" : "M 32 120 L 68 120 L 63 152 L 37 152 Z"} 
-                fill="url(#shirt)" filter="url(#shadow)" style={{ transition: 'all 0.4s' }}/>
-          <path d="M 50 120 L 50 150" stroke="#CCCCCC" strokeWidth="1" strokeDasharray="3 2"/>
-
-          {/* Sol Kol (Dinamik Bezier) */}
-          <path d={leftArmPath} fill="none" stroke="url(#shirt)" strokeWidth="8" strokeLinecap="round" filter="url(#shadow)" style={{ transition: 'all 0.4s' }}/>
-          {/* Sadece boşken eller */}
-          {(signDropped || isBored || bodyAsleep || isPickUp) && (
-            <circle cx="0" cy="0" r="5" fill="url(#skin)" style={{ offsetPath: `path('${leftArmPath}')`, offsetDistance: '100%', transition: 'all 0.4s' }}/>
-          )}
-
-          {/* Sağ Kol (Dinamik Bezier) */}
-          <path d={rightArmPath} fill="none" stroke="url(#shirt)" strokeWidth="8" strokeLinecap="round" filter="url(#shadow)" style={{ transition: 'all 0.4s' }}/>
-          {(signDropped || isBored || bodyAsleep || isPickUp) && (
-            <circle cx="0" cy="0" r="5" fill="url(#skin)" style={{ offsetPath: `path('${rightArmPath}')`, offsetDistance: '100%', transition: 'all 0.4s' }}/>
-          )}
-
-          {/* ── KAFA GRUBU ── */}
+ 
+        {/* ── Tüm gövde eğimi (uyku) ── */}
+        <g style={{
+          transformOrigin: '50px 210px',
+          transform: `rotate(${bodyTilt}deg)`,
+          transition: 'transform 0.8s cubic-bezier(0.25,1,0.5,1)',
+        }}>
+ 
+          {/* ════ PANKART + ELLER — aynı g içinde, birlikte sallanır ════ */}
           <g style={{
-            transform: `translate(${headX}px, ${headY}px) rotate(${headRotate}deg)`,
-            transformOrigin: '50px 115px',
-            transition: 'all 0.4s ease'
+            transformOrigin: '50px 88px',
+            transform: signUp ? waveTransform : 'rotate(0deg)',
+            transition: 'transform 0.5s ease',
           }}>
-            {/* Boyun */}
-            <rect x="46" y="112" width="8" height="12" fill="url(#skin)" />
-            {/* Yüz Tabani */}
-            <path d="M 30 100 Q 30 120, 50 120 Q 70 120, 70 100 Q 70 75, 50 75 Q 30 75, 30 100 Z" fill="url(#skin)" filter="url(#shadow)"/>
-            
+            {/* Pankart grubu */}
+            <g style={{
+              opacity: signUp ? 1 : 0,
+              transform: signUp ? 'translateY(0)' : 'translateY(40px)',
+              transition: 'opacity 0.35s ease, transform 0.5s cubic-bezier(0.34,1.56,0.64,1)',
+            }}>
+              {/* Tabela */}
+              <rect x="14" y="4" width="72" height="36" rx="5" fill={sign.bg}/>
+              <rect x="14" y="4" width="72" height="36" rx="5" fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="1.5"/>
+              <text x="50" y="19" textAnchor="middle" fontSize="9" fontWeight="800"
+                fill={sign.color} fontFamily="DM Sans,sans-serif">{sign.line1}</text>
+              <text x="50" y="32" textAnchor="middle" fontSize="10" fontWeight="900"
+                fill={sign.color} fontFamily="DM Sans,sans-serif">{sign.line2}</text>
+              {/* Sopa */}
+              <line x1="50" y1="40" x2="50" y2="88"
+                stroke="#5C3418" strokeWidth="3.5" strokeLinecap="round"/>
+            </g>
+ 
+            {/* Sol el — sopa üstünde, (43,88) */}
+            <circle cx="43" cy="88" r="5"
+              fill="#E8B88A"
+              style={{
+                transform: armsUp ? 'translateY(0)' : 'translateY(67px) translateX(-27px)',
+                transition: 'transform 0.5s cubic-bezier(0.34,1.56,0.64,1)',
+              }}
+            />
+            {/* Sağ el — sopa üstünde, (57,88) */}
+            <circle cx="57" cy="88" r="5"
+              fill="#E8B88A"
+              style={{
+                transform: armsUp ? 'translateY(0)' : 'translateY(67px) translateX(27px)',
+                transition: 'transform 0.5s cubic-bezier(0.34,1.56,0.64,1)',
+              }}
+            />
+          </g>
+ 
+          {/* ════ KARAKTER ════ */}
+ 
+          {/* Bacaklar */}
+          <line x1="41" y1="166" x2="37" y2="188" stroke="#5C3418" strokeWidth="6" strokeLinecap="round"/>
+          <line x1="59" y1="166" x2="63" y2="188" stroke="#5C3418" strokeWidth="6" strokeLinecap="round"/>
+          <ellipse cx="35" cy="190" rx="7" ry="3.5" fill="#2C1A0E"/>
+          <ellipse cx="65" cy="190" rx="7" ry="3.5" fill="#2C1A0E"/>
+ 
+          {/* Pantolon */}
+          <rect x="32" y="152" width="36" height="17" rx="5" fill="#5C3418"/>
+          <line x1="50" y1="152" x2="50" y2="169" stroke="#4A2910" strokeWidth="1.5"/>
+ 
+          {/* Gömlek */}
+          <rect x="30" y="128" width="40" height="27" rx="7" fill="white" stroke="#e0e0e0" strokeWidth="1"/>
+          {/* Yaka V */}
+          <path d="M39,128 L50,138 L61,128" fill="none" stroke="#d0d0d0" strokeWidth="1.3"/>
+          {/* Düğmeler */}
+          <circle cx="50" cy="141" r="1.4" fill="#ccc"/>
+          <circle cx="50" cy="148" r="1.4" fill="#ccc"/>
+ 
+          {/* ── Sol kol (önde — z-order: kol, sonra gövde üstünde) ── */}
+          <line x1="32" y1="133"
+            x2={lx2} y2={ly2}
+            stroke="white" strokeWidth="6.5" strokeLinecap="round"
+            style={{ transition: 'x2 0.5s cubic-bezier(0.34,1.56,0.64,1), y2 0.5s cubic-bezier(0.34,1.56,0.64,1)' }}
+          />
+          <line x1="32" y1="133"
+            x2={lx2} y2={ly2}
+            stroke="#e8e8e8" strokeWidth="5" strokeLinecap="round"
+            style={{ transition: 'x2 0.5s cubic-bezier(0.34,1.56,0.64,1), y2 0.5s cubic-bezier(0.34,1.56,0.64,1)' }}
+          />
+ 
+          {/* ── Sağ kol ── */}
+          <line x1="68" y1="133"
+            x2={rx2} y2={ry2}
+            stroke="white" strokeWidth="6.5" strokeLinecap="round"
+            style={{ transition: 'x2 0.5s cubic-bezier(0.34,1.56,0.64,1), y2 0.5s cubic-bezier(0.34,1.56,0.64,1)' }}
+          />
+          <line x1="68" y1="133"
+            x2={rx2} y2={ry2}
+            stroke="#e8e8e8" strokeWidth="5" strokeLinecap="round"
+            style={{ transition: 'x2 0.5s cubic-bezier(0.34,1.56,0.64,1), y2 0.5s cubic-bezier(0.34,1.56,0.64,1)' }}
+          />
+ 
+          {/* ── KAFA ── */}
+          <g style={{
+            transform: `translateX(${headX}px)`,
+            transition: 'transform 0.4s ease',
+          }}>
+            {/* Kafa taban */}
+            <circle cx="50" cy="105" r="20" fill="#E8B88A"/>
+ 
             {/* Kulaklar */}
-            <ellipse cx="28" cy="100" rx="4" ry="6" fill="url(#skin)"/>
-            <ellipse cx="72" cy="100" rx="4" ry="6" fill="url(#skin)"/>
-
-            {/* Gerçekçi Saç */}
-            <path d="M 28 95 Q 35 70, 50 68 Q 65 70, 72 95 Q 60 85, 50 88 Q 40 85, 28 95 Z" fill="#3D2314"/>
-            <path d="M 45 68 Q 50 60, 55 68" fill="none" stroke="#3D2314" strokeWidth="3" strokeLinecap="round"/>
-
-            {/* GÖZLER */}
-            <g transform="translate(0, -2)">
-              {isCrash || isRecovery ? (
-                // Sersemlemiş Gözler (Spiraller)
-                <g stroke="#3D2314" strokeWidth="1.5" fill="none">
-                  <path d="M 38 102 Q 43 98, 43 103 Q 40 106, 38 102" />
-                  <path d="M 58 102 Q 63 98, 63 103 Q 60 106, 58 102" />
-                </g>
-              ) : bodyAsleep || isBored ? (
-                // Kapalı/Kısık Gözler
-                <g stroke="#3D2314" strokeWidth="2" strokeLinecap="round" fill="none">
-                  <path d="M 37 104 Q 41 106, 45 104" />
-                  <path d="M 55 104 Q 59 106, 63 104" />
-                </g>
-              ) : isShocked || isSpotSign ? (
-                // Şaşkın Gözler (Kocaman)
-                <>
-                  <circle cx="41" cy="102" r="5" fill="#FFF" stroke="#CCC" strokeWidth="0.5"/>
-                  <circle cx="59" cy="102" r="5" fill="#FFF" stroke="#CCC" strokeWidth="0.5"/>
-                  <circle cx="41" cy="102" r="2" fill="#111"/>
-                  <circle cx="59" cy="102" r="2" fill="#111"/>
-                </>
-              ) : (
-                // Normal Gözler (İris detaylı)
-                <>
-                  <path d="M 36 102 Q 41 98, 46 102 Q 41 106, 36 102 Z" fill="#FFF"/>
-                  <path d="M 54 102 Q 59 98, 64 102 Q 59 106, 54 102 Z" fill="#FFF"/>
-                  <circle cx={isLookLeft ? 39 : isLookRight ? 43 : 41} cy="102" r="2.5" fill="#2E6B4C"/>
-                  <circle cx={isLookLeft ? 57 : isLookRight ? 61 : 59} cy="102" r="2.5" fill="#2E6B4C"/>
-                  <circle cx={isLookLeft ? 39 : isLookRight ? 43 : 41} cy="102" r="1" fill="#111"/>
-                  <circle cx={isLookLeft ? 57 : isLookRight ? 61 : 59} cy="102" r="1" fill="#111"/>
-                </>
-              )}
-            </g>
-
+            <ellipse cx="30" cy="105" rx="4" ry="5" fill="#E8B88A"/>
+            <ellipse cx="70" cy="105" rx="4" ry="5" fill="#E8B88A"/>
+            <ellipse cx="30" cy="105" rx="2.5" ry="3.5" fill="#D4946A"/>
+            <ellipse cx="70" cy="105" rx="2.5" ry="3.5" fill="#D4946A"/>
+ 
+            {/* ── SAÇ — dolgun, kelli değil ── */}
+            {/* Saç tabanı — kafanın üst yarısını tamamen kapatır */}
+            <path d="M30,105 Q30,82 50,80 Q70,82 70,105"
+              fill="#3D2B1F"/>
+            {/* Saç doluluğu — yan saçlar */}
+            <ellipse cx="50" cy="84" rx="21" ry="14" fill="#3D2B1F"/>
+            {/* Saç detayı — hafif dalgalı üst */}
+            <path d="M29,100 Q32,86 40,82 Q50,78 60,82 Q68,86 71,100"
+              fill="#3D2B1F"/>
+            {/* Saç alt kenarı — alın çizgisi */}
+            <path d="M30,100 Q35,96 50,95 Q65,96 70,100"
+              fill="#E8B88A"/>
+            {/* Saç çizgileri (detay) */}
+            <path d="M38,83 Q42,88 40,94" fill="none" stroke="#2C1A0E" strokeWidth="0.8" opacity="0.5"/>
+            <path d="M50,80 Q50,86 50,93" fill="none" stroke="#2C1A0E" strokeWidth="0.8" opacity="0.5"/>
+            <path d="M62,83 Q58,88 60,94" fill="none" stroke="#2C1A0E" strokeWidth="0.8" opacity="0.5"/>
+ 
+            {/* ── GÖZLER ── */}
+            {asleep ? (
+              <>
+                <path d="M39,107 Q42,103 45,107" fill="none" stroke="#3D2B1F" strokeWidth="2.2" strokeLinecap="round"/>
+                <path d="M55,107 Q58,103 61,107" fill="none" stroke="#3D2B1F" strokeWidth="2.2" strokeLinecap="round"/>
+                {/* Kirpik */}
+                <line x1="39" y1="107" x2="37" y2="105" stroke="#3D2B1F" strokeWidth="1.2"/>
+                <line x1="45" y1="107" x2="47" y2="105" stroke="#3D2B1F" strokeWidth="1.2"/>
+                <line x1="55" y1="107" x2="53" y2="105" stroke="#3D2B1F" strokeWidth="1.2"/>
+                <line x1="61" y1="107" x2="63" y2="105" stroke="#3D2B1F" strokeWidth="1.2"/>
+              </>
+            ) : isSquash ? (
+              // Başı dönmüş gözler
+              <>
+                <text x="39" y="111" fontSize="9" fill="#3D2B1F" textAnchor="middle">×</text>
+                <text x="61" y="111" fontSize="9" fill="#3D2B1F" textAnchor="middle">×</text>
+              </>
+            ) : blink ? (
+              <>
+                <line x1="38" y1="107" x2="46" y2="107" stroke="#3D2B1F" strokeWidth="2.2" strokeLinecap="round"/>
+                <line x1="54" y1="107" x2="62" y2="107" stroke="#3D2B1F" strokeWidth="2.2" strokeLinecap="round"/>
+              </>
+            ) : (
+              <>
+                {/* Göz beyazı */}
+                <ellipse cx="42" cy="107" rx="5" ry="5.5" fill="white"/>
+                <ellipse cx="58" cy="107" rx="5" ry="5.5" fill="white"/>
+                {/* Yeşil iris */}
+                <circle cx="42" cy="107" r="3.8" fill="#2e9455"/>
+                <circle cx="58" cy="107" r="3.8" fill="#2e9455"/>
+                {/* Göz bebeği */}
+                <circle cx="42" cy="107" r="2.2" fill="#111"/>
+                <circle cx="58" cy="107" r="2.2" fill="#111"/>
+                {/* Parlaklık */}
+                <circle cx="43.2" cy="105.5" r="1" fill="white"/>
+                <circle cx="59.2" cy="105.5" r="1" fill="white"/>
+                {/* Üst kirpik */}
+                <path d="M37,104 Q42,102 47,104" fill="none" stroke="#3D2B1F" strokeWidth="1.2" strokeLinecap="round"/>
+                <path d="M53,104 Q58,102 63,104" fill="none" stroke="#3D2B1F" strokeWidth="1.2" strokeLinecap="round"/>
+              </>
+            )}
+ 
             {/* Kaşlar */}
-            <g stroke="#3D2314" strokeWidth="1.5" strokeLinecap="round" fill="none">
-              {(isSpotSign || isShocked) ? (
-                <> <path d="M 36 93 Q 41 89, 46 93" /> <path d="M 54 93 Q 59 89, 64 93" /> </>
-              ) : isBored || isRecovery ? (
-                <> <path d="M 36 96 L 46 98" /> <path d="M 54 98 L 64 96" /> </>
-              ) : (
-                <> <path d="M 36 96 Q 41 94, 46 96" /> <path d="M 54 96 Q 59 94, 64 96" /> </>
-              )}
-            </g>
-
+            {isExcited && (
+              <>
+                <path d="M37,101 Q42,98 47,101" fill="none" stroke="#3D2B1F" strokeWidth="1.8" strokeLinecap="round"/>
+                <path d="M53,101 Q58,98 63,101" fill="none" stroke="#3D2B1F" strokeWidth="1.8" strokeLinecap="round"/>
+              </>
+            )}
+ 
             {/* Burun */}
-            <path d="M 49 106 Q 52 108, 48 110" fill="none" stroke="#C28A62" strokeWidth="1.5" strokeLinecap="round"/>
-
+            <ellipse cx="50" cy="113" rx="3" ry="2.2" fill="#D4946A"/>
+            <ellipse cx="48.5" cy="113" rx="1.2" ry="1" fill="#C4836A" opacity="0.6"/>
+            <ellipse cx="51.5" cy="113" rx="1.2" ry="1" fill="#C4836A" opacity="0.6"/>
+ 
             {/* Ağız */}
             <path d={
-              isCrash || isRecovery ? "M 44 114 Q 50 110, 56 114" : // Üzgün
-              isSpotSign || isShocked ? "M 46 114 Q 50 118, 54 114 Z" : // O harfi
-              isBored || bodyAsleep ? "M 46 115 L 54 115" : // Düz
-              "M 43 113 Q 50 118, 57 113" // Normal Gülümseme
-            } fill={isSpotSign || isShocked ? "#5C3418" : "none"} stroke="#5C3418" strokeWidth="1.5" strokeLinecap="round"/>
-
-            {/* Allık */}
-            <ellipse cx="36" cy="108" rx="4" ry="2" fill="#FF8888" opacity="0.4" />
-            <ellipse cx="64" cy="108" rx="4" ry="2" fill="#FF8888" opacity="0.4" />
-
-            {/* Efektler (Bulduğunda Ünlem, Sersemlediğinde Yıldız) */}
-            {isSpotSign && <text x="65" y="80" fontSize="20" fill="#FF3333" fontWeight="bold" style={{ animation: 'bounce 0.5s infinite' }}>!</text>}
-            {isRecovery && <text x="25" y="80" fontSize="15" fill="#FFCC00">✨</text>}
-            
-            {/* Uyku Modu Salyası */}
-            {isSleeping && <path d="M 54 115 Q 58 122, 55 128" fill="none" stroke="#ADD8E6" strokeWidth="1.5" opacity="0.8"/>}
-
-          </g> {/* Kafa Sonu */}
-        </g> {/* Karakter Ana Grup Sonu */}
-
-        {/* ── ZZZ UYKU EFEKTİ ── */}
-        {isSleeping && (
-          <g fontSize="16" fontWeight="900" fill="#6B8FD4">
-            <text x="75" y="60" opacity={zf === 0 ? 1 : 0.2}>Z</text>
-            <text x="85" y="45" fontSize="20" opacity={zf === 1 ? 1 : 0.2}>Z</text>
-            <text x="98" y="25" fontSize="26" opacity={zf === 2 ? 1 : 0.2}>Z</text>
+              isSquash
+                ? 'M44,119 Q50,116 56,119'
+                : asleep
+                ? 'M46,119 Q50,118 54,119'
+                : isExcited
+                ? 'M43,118 Q50,124 57,118'
+                : 'M44,118 Q50,122 56,118'
+            } fill="none" stroke="#5C3418" strokeWidth="2" strokeLinecap="round"/>
+ 
+            {/* Yanak allığı */}
+            <ellipse cx="35" cy="114" rx="5" ry="3.5" fill="#F4A0A0" opacity="0.35"/>
+            <ellipse cx="65" cy="114" rx="5" ry="3.5" fill="#F4A0A0" opacity="0.35"/>
+ 
+            {/* Salya (uyku) */}
+            {isSleeping && (
+              <path d="M56,120 Q59,125 57,129" fill="none" stroke="#B8D4F0" strokeWidth="2" strokeLinecap="round" opacity="0.8"/>
+            )}
+ 
+            {/* Yıldızlar (çarpma) */}
+            {isSquash && (
+              <>
+                <text x="26" y="90" fontSize="9" fill="#F5C842">✦</text>
+                <text x="66" y="88" fontSize="8" fill="#F5C842" opacity="0.8">✦</text>
+                <text x="46" y="83" fontSize="11" fill="#F5C842">✦</text>
+              </>
+            )}
           </g>
-        )}
-
+ 
+          {/* ── ZZZ ── */}
+          {isSleeping && (
+            <>
+              <text x="68" y="92" fontSize="10" fontWeight="bold" fill="#6B8FD4"
+                opacity={zf === 0 ? 1 : 0.1} style={{ transition: 'opacity 0.3s' }}>z</text>
+              <text x="75" y="81" fontSize="13" fontWeight="bold" fill="#6B8FD4"
+                opacity={zf === 1 ? 1 : 0.1} style={{ transition: 'opacity 0.3s' }}>z</text>
+              <text x="83" y="68" fontSize="16" fontWeight="bold" fill="#6B8FD4"
+                opacity={zf === 2 ? 1 : 0.1} style={{ transition: 'opacity 0.3s' }}>z</text>
+            </>
+          )}
+ 
+        </g>
       </svg>
     </div>
   );
