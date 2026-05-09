@@ -361,9 +361,9 @@ const MenuPage = () => {
       {/* Social Media Icons Section */}
       <div className="py-6 sm:py-8">
         <SocialMediaIcons
-  instagram="https://instagram.com/atlascafe.me"
+  instagram="https://www.instagram.com/atlascafefoodbar/"
   email="info@cafeatlas.me"
-  phone="+38269123456"
+  phone="+38267036687"
   website="https://cafeatlas.me"
 />
       </div>
