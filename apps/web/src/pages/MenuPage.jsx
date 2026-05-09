@@ -360,7 +360,12 @@ const MenuPage = () => {
 
       {/* Social Media Icons Section */}
       <div className="py-6 sm:py-8">
-        <SocialMediaIcons />
+        <SocialMediaIcons
+  instagram="https://instagram.com/atlascafe.me"
+  email="info@cafeatlas.me"
+  phone="+38269123456"
+  website="https://cafeatlas.me"
+/>
       </div>
 
       {/* Combined Sticky Header: Dynamic Title + Category Tabs */}
