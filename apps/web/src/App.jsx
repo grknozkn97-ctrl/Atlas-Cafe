@@ -5,8 +5,9 @@ import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
 import MenuPage from '@/pages/MenuPage.jsx';
 import FoodMenuPage from '@/pages/FoodMenuPage.jsx';
+import MascotWidget from '@/components/MascotWidget.jsx';
 import { MenuProvider } from '@/contexts/MenuContext.jsx';
-
+ 
 function App() {
     return (
         <MenuProvider>
@@ -31,10 +32,11 @@ function App() {
                         </Routes>
                     </div>
                     <Footer />
+                    <MascotWidget />
                 </div>
             </Router>
         </MenuProvider>
     );
 }
-
+ 
 export default App;
