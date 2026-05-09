@@ -33,7 +33,7 @@ const featuredProducts = [
     price: 15.00,
     image: 'https://horizons-cdn.hostinger.com/9990fccc-f647-46a3-9783-2f5f1ca49c5d/4ba4d8effa966d7c6fe4743afb4ab281.png',
     targetId: 'pasta',
-    tag: 'Chef\'s Choice',
+    tag: "Chef's Choice",
   },
 ];
  
@@ -103,66 +103,67 @@ const FeaturedProductsCarousel = ({ onProductClick }) => {
               className="w-full h-full object-cover pointer-events-none"
             />
  
-            {/* Gradient — ince, sadece alt kısım */}
+            {/* Gradient — sadece alt */}
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
-                background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.18) 45%, transparent 100%)',
+                background: 'linear-gradient(to top, rgba(0,0,0,0.70) 0%, rgba(0,0,0,0.15) 50%, transparent 100%)',
               }}
             />
  
-            {/* Üst: Tag */}
+            {/* Üst sol: Tag */}
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15, duration: 0.4 }}
               className="absolute top-4 left-4 pointer-events-none"
             >
-              <span
-                style={{
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontSize: '10px',
-                  fontWeight: '600',
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  color: '#fff',
-                  backgroundColor: 'rgba(255,255,255,0.15)',
-                  backdropFilter: 'blur(8px)',
-                  WebkitBackdropFilter: 'blur(8px)',
-                  border: '1px solid rgba(255,255,255,0.25)',
-                  padding: '4px 10px',
-                  borderRadius: '100px',
-                }}
-              >
+              <span style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '10px',
+                fontWeight: '600',
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: '#fff',
+                backgroundColor: 'rgba(255,255,255,0.15)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255,255,255,0.25)',
+                padding: '4px 10px',
+                borderRadius: '100px',
+              }}>
                 {current.tag}
               </span>
             </motion.div>
  
-            {/* Alt: İsim + Fiyat */}
+            {/* Alt içerik */}
             <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8 pointer-events-none">
-              <div className="flex items-end justify-between gap-4">
  
-                {/* Sol: İsim */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <motion.h3
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2, duration: 0.45 }}
-                    style={{
-                      fontFamily: 'Lora, serif',
-                      fontSize: 'clamp(18px, 4vw, 32px)',
-                      fontWeight: '700',
-                      color: '#fff',
-                      lineHeight: 1.15,
-                      letterSpacing: '-0.01em',
-                      textShadow: '0 1px 12px rgba(0,0,0,0.3)',
-                    }}
-                  >
-                    {current.name}
-                  </motion.h3>
-                </div>
+              {/* İsim + Fiyat — aynı satırda, align-items: flex-end ile baseline hizası */}
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px' }}>
  
-                {/* Sağ: Fiyat */}
+                <motion.h3
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2, duration: 0.45 }}
+                  style={{
+                    fontFamily: 'Lora, serif',
+                    fontSize: 'clamp(18px, 4vw, 32px)',
+                    fontWeight: '700',
+                    color: '#fff',
+                    lineHeight: 1.15,
+                    letterSpacing: '-0.01em',
+                    textShadow: '0 1px 12px rgba(0,0,0,0.3)',
+                    flex: 1,
+                    minWidth: 0,
+                    margin: 0,
+                    /* fiyat pill ile aynı alt çizgide durması için */
+                    paddingBottom: '2px',
+                  }}
+                >
+                  {current.name}
+                </motion.h3>
+ 
                 <motion.div
                   initial={{ opacity: 0, scale: 0.85 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -172,21 +173,22 @@ const FeaturedProductsCarousel = ({ onProductClick }) => {
                     backgroundColor: 'hsl(24, 45%, 35%)',
                     color: '#fff',
                     fontFamily: 'DM Sans, sans-serif',
-                    fontSize: 'clamp(15px, 3vw, 22px)',
+                    fontSize: 'clamp(14px, 2.5vw, 20px)',
                     fontWeight: '700',
-                    padding: '8px 18px',
+                    padding: '7px 16px',
                     borderRadius: '100px',
                     letterSpacing: '0.01em',
                     boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+                    /* baseline hizası için aynı paddingBottom */
+                    marginBottom: '2px',
                   }}
                 >
                   €{current.price.toFixed(2)}
                 </motion.div>
- 
               </div>
  
-              {/* Dot navigation — hemen altında */}
-              <div className="flex items-center gap-1.5 mt-4">
+              {/* Dot navigation */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '14px' }}>
                 {featuredProducts.map((_, i) => (
                   <button
                     key={i}
