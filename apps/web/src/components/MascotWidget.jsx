@@ -7,7 +7,7 @@ const SIGNS = [
     line2: 'Instagram',
     bg: '#E1306C',
     color: '#fff',
-    href: 'https://instagram.com/atlascafe.me',
+    href: 'https://www.instagram.com/atlascafefoodbar/',
   },
   {
     id: 'google',
