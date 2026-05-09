@@ -1,45 +1,130 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+
+const WORDS = ['GOOD FOOD', 'GOOD MOOD'];
 
 const Header = () => {
+  const [wordIndex, setWordIndex] = useState(0);
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const cycle = setInterval(() => {
+      setVisible(false);
+      setTimeout(() => {
+        setWordIndex(prev => (prev + 1) % WORDS.length);
+        setVisible(true);
+      }, 400);
+    }, 2200);
+    return () => clearInterval(cycle);
+  }, []);
+
   return (
-    <header className="w-full bg-background/95 backdrop-blur-md border-b border-border/40 shadow-sm">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        {/* Ortalamak ve öğeleri dikey hizalamak için flex */}
-        <div className="flex items-center justify-center gap-2">
+    <header
+      style={{
+        width: '100%',
+        height: '64px',
+        backgroundColor: 'hsl(40, 33%, 98%)',
+        borderBottom: '1px solid hsl(38, 20%, 85%)',
+        display: 'flex',
+        alignItems: 'center',
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '1024px',
+          margin: '0 auto',
+          padding: '0 16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+        }}
+      >
+        {/* Sol: Logo */}
+        <a href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}>
+          <img
+            src="/Atlas_Trspr.png"
+            alt="Atlas Cafe"
+            style={{ height: '48px', width: 'auto', objectFit: 'contain' }}
+          />
+        </a>
 
-          {/* Sofistike Font Tasarımı */}
-          <h1 className="text-xl sm:text-2xl font-serif font-bold tracking-[0.15em] uppercase text-foreground drop-shadow-sm transition-all duration-300">
-            ATLAS
-          </h1>
-
-          {/* Zarif Google Değerlendirme Butonu */}
-          <a
-            href="https://share.google/gx9QBu5N87yWGipUd"
-            target="_blank"
-            rel="noopener noreferrer"
-            // flex items-center ve gap-1 ile yıldız ve puanı yan yana getirdik
-            className="flex items-center gap-1 group text-amber-500 hover:text-amber-600 transition-colors duration-300 cursor-pointer"
-            title="Bizi Google'da Değerlendirin!"
+        {/* Orta: Animasyonlu Slogan */}
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            overflow: 'hidden',
+            minWidth: 0,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: 'Lora, serif',
+              fontSize: 'clamp(13px, 3vw, 18px)',
+              fontStyle: 'italic',
+              fontWeight: '600',
+              color: 'hsl(24, 45%, 35%)',
+              letterSpacing: '0.08em',
+              whiteSpace: 'nowrap',
+              opacity: visible ? 1 : 0,
+              transform: visible ? 'translateY(0px)' : 'translateY(-6px)',
+              transition: 'opacity 0.4s ease, transform 0.4s ease',
+              userSelect: 'none',
+            }}
           >
-            {/* İçi Boş (Outline) Minimalist Yıldız */}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none" // İçini boş bıraktık
-              viewBox="0 0 24 24"
-              strokeWidth={1.5} // İnce çizgi
-              stroke="currentColor" // Rengi 'amber-500'den alır
-              className="w-5 h-5 sm:w-6 sm:h-6 transition-transform group-hover:scale-110 duration-300"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
-            </svg>
-
-            {/* Minimalist Puan Detayı - Tasarımı bütünleştirir */}
-            <span className="text-xs sm:text-sm font-sans text-muted-foreground/80 group-hover:text-amber-600 transition-colors duration-300 mt-0.5">
-              (4.9)
-            </span>
-          </a>
-
+            {WORDS[wordIndex]}
+          </span>
         </div>
+
+        {/* Sağ: Google Rating Pill */}
+        <a
+          href="https://share.google/gx9QBu5N87yWGipUd"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px',
+            textDecoration: 'none',
+            padding: '6px 12px',
+            borderRadius: '100px',
+            backgroundColor: '#fff',
+            border: '1px solid hsl(38, 20%, 85%)',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+            cursor: 'pointer',
+          }}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="#f5c842"
+            style={{ width: '13px', height: '13px', flexShrink: 0 }}
+          >
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+          <span style={{
+            fontSize: '12px',
+            fontWeight: '600',
+            color: 'hsl(24, 10%, 10%)',
+            fontFamily: 'DM Sans, sans-serif',
+            lineHeight: 1,
+          }}>
+            4.9
+          </span>
+          <span style={{
+            fontSize: '10px',
+            color: 'hsl(24, 10%, 40%)',
+            fontFamily: 'DM Sans, sans-serif',
+            lineHeight: 1,
+          }}>
+            Google
+          </span>
+        </a>
+
       </div>
     </header>
   );
