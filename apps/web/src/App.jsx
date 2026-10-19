@@ -1,42 +1,103 @@
-import React from 'react';
-import { Route, Routes, BrowserRouter as Router } from 'react-router-dom';
-import ScrollToTop from '@/components/ScrollToTop.jsx';
-import Header from '@/components/Header.jsx';
-import Footer from '@/components/Footer.jsx';
-import MenuPage from '@/pages/MenuPage.jsx';
-import FoodMenuPage from '@/pages/FoodMenuPage.jsx';
-import MascotWidget from '@/components/MascotWidget.jsx';
-import { MenuProvider } from '@/contexts/MenuContext.jsx';
- 
-function App() {
-    return (
-        <MenuProvider>
-            <Router>
-                <ScrollToTop />
-                <div className="flex flex-col min-h-screen">
-                    <Header />
-                    <div className="flex-grow">
-                        <Routes>
-                            <Route path="/" element={<MenuPage />} />
-                            <Route path="/drinks" element={<MenuPage />} />
-                            <Route path="/alcohol" element={<MenuPage />} />
-                            <Route path="/dessert" element={<MenuPage />} />
-                            <Route path="/food" element={<FoodMenuPage />} />
-                            <Route path="*" element={
-                                <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-                                    <h1 className="text-4xl font-bold mb-4">Page Not Found</h1>
-                                    <p className="text-muted-foreground mb-8">The page you are looking for doesn't exist.</p>
-                                    <a href="/" className="text-primary hover:underline">Return Home</a>
-                                </div>
-                            } />
-                        </Routes>
-                    </div>
-                    <Footer />
-                    <MascotWidget />
-                </div>
-            </Router>
-        </MenuProvider>
-    );
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { LangProvider, ListProvider, useLang } from '@/lib/store.jsx';
+import { sections as allSections, itemsById } from '@/data/menu.js';
+import { ingredients } from '@/data/ingredients.js';
+import Top from '@/components/Top.jsx';
+import Deals from '@/components/Deals.jsx';
+import { CatNav, MenuList, scrollToId } from '@/components/Menu.jsx';
+import ProductSheet, { DealSheet } from '@/components/ProductSheet.jsx';
+import { FilterSheet, Footer, LangSheet, ListBar, ListSheet } from '@/components/Panels.jsx';
+import Mascot from '@/components/Mascot.jsx';
+
+// Lower-case and strip accents so "cokertme" finds "Çökertme" and "kafa" finds "Kafa".
+const fold = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
+
+function Page() {
+  const { lang, t } = useLang();
+  const [query, setQuery] = useState('');
+  const [hidden, setHidden] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem('atlas-hide') || '[]'); } catch { return []; }
+  });
+  const [item, setItem] = useState(null);
+  const [deal, setDeal] = useState(null);
+  const [panel, setPanel] = useState(null); // 'lang' | 'filter' | 'list'
+  const [active, setActive] = useState({ section: allSections[0].id, group: allSections[0].groups[0].id });
+
+  useEffect(() => { try { sessionStorage.setItem('atlas-hide', JSON.stringify(hidden)); } catch { /* ignore */ } }, [hidden]);
+
+  // Apply search and allergen filter; drop empty groups and sections.
+  const { sections, hiddenCount } = useMemo(() => {
+    const q = fold(query.trim());
+    let hiddenN = 0;
+    const out = [];
+    for (const s of allSections) {
+      const groups = [];
+      for (const g of s.groups) {
+        const items = g.items.filter((it) => {
+          if (hidden.length && (it.al || []).some((a) => hidden.includes(a))) { hiddenN += 1; return false; }
+          if (!q) return true;
+          const hay = [it.name, ...Object.values(it.names || {}), ...Object.values(g.title),
+            ...(it.ing || []).map((k) => { const key = k.split(':').pop(); return Object.values(ingredients[key] || {}).join(' '); }),
+          ].join(' ');
+          return fold(hay).includes(q);
+        });
+        if (items.length) groups.push({ ...g, items });
+      }
+      if (groups.length) out.push({ ...s, groups });
+    }
+    return { sections: out, hiddenCount: hiddenN };
+  }, [query, hidden]);
+
+  // Old links and QR codes: /drinks, /food, /alcohol, /dessert jump to their section.
+  useEffect(() => {
+    const path = window.location.pathname.replace(/\/+$/, '');
+    const target = allSections.find((s) => s.path === path);
+    if (target) setTimeout(() => scrollToId(`sec-${target.id}`), 250);
+  }, []);
+
+  const openItem = useCallback((it) => setItem(itemsById[it.id]), []);
+  const openDeal = useCallback((d) => { setItem(null); setTimeout(() => setDeal(d), item ? 260 : 0); }, [item]);
+  const anyOpen = !!item || !!deal || !!panel;
+
+  return (
+    <>
+      <Top
+        query={query}
+        setQuery={setQuery}
+        onLang={() => setPanel('lang')}
+        onFilter={() => setPanel('filter')}
+        hiddenAllergens={hidden}
+        hiddenCount={hiddenCount}
+        clearFilter={() => setHidden([])}
+      />
+      {!query && <Deals onOpen={openDeal} />}
+      {sections.length > 0 ? (
+        <>
+          <CatNav sections={sections} active={active} setActive={setActive} />
+          <MenuList sections={sections} onOpen={openItem} active={active} setActive={setActive} key={lang + query + hidden.join()} />
+        </>
+      ) : (
+        <p className="empty wrap">{t.noResults(query)}</p>
+      )}
+      <Footer />
+
+      <ProductSheet item={item} onClose={() => setItem(null)} onDeal={openDeal} />
+      <DealSheet deal={deal} onClose={() => setDeal(null)} />
+      <LangSheet open={panel === 'lang'} onClose={() => setPanel(null)} />
+      <FilterSheet open={panel === 'filter'} onClose={() => setPanel(null)} hidden={hidden} setHidden={setHidden} />
+      <ListSheet open={panel === 'list'} onClose={() => setPanel(null)} />
+      <ListBar onOpen={() => setPanel('list')} hiddenWhen={anyOpen} />
+      <Mascot suppressed={anyOpen} />
+    </>
+  );
 }
- 
-export default App;
+
+export default function App() {
+  return (
+    <LangProvider>
+      <ListProvider>
+        <Page />
+      </ListProvider>
+    </LangProvider>
+  );
+}
