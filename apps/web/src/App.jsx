@@ -4,7 +4,9 @@ import { applyLive } from '@/lib/live.js';
 import { sections as baseSections, itemsById } from '@/data/menu.js';
 import { ingredients } from '@/data/ingredients.js';
 import Top from '@/components/Top.jsx';
-import Deals from '@/components/Deals.jsx';
+import Deals, { HalloweenPicks } from '@/components/Deals.jsx';
+import { THEME, isHalloween } from '@/data/theme.js';
+import { picks as hwPicks } from '@/data/halloween.js';
 import { CatNav, MenuList, scrollToId } from '@/components/Menu.jsx';
 import ProductSheet, { DealSheet } from '@/components/ProductSheet.jsx';
 import { FilterSheet, Footer, LangSheet, ListBar, ListSheet } from '@/components/Panels.jsx';
@@ -71,6 +73,17 @@ function Page() {
     for (const s of allSections) for (const g of s.groups) for (const it of g.items) if (it.special && !it.soldOut) out.push(it);
     return out;
   }, [allSections]);
+  const halloweenItems = useMemo(() => {
+    if (!isHalloween) return [];
+    const flat = {};
+    for (const s of allSections) for (const g of s.groups) for (const it of g.items) flat[it.id] = it;
+    return hwPicks.map((id) => flat[id]).filter((it) => it && !it.soldOut);
+  }, [allSections]);
+  useEffect(() => {
+    document.documentElement.dataset.theme = THEME;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', isHalloween ? '#15110e' : '#f6f2e8');
+  }, []);
   const openDeal = useCallback((d) => {
     track('Deal opened', { id: d.id }); setItem(null); setTimeout(() => setDeal(d), item ? 260 : 0); }, [item]);
   const anyOpen = !!item || !!deal || !!panel;
@@ -86,6 +99,7 @@ function Page() {
         hiddenCount={hiddenCount}
         clearFilter={() => setHidden([])}
       />
+      {!query && isHalloween && <HalloweenPicks items={halloweenItems} onOpen={openItem} />}
       {!query && <Deals onOpen={openDeal} specials={specials} onOpenItem={openItem} />}
       {sections.length > 0 ? (
         <>

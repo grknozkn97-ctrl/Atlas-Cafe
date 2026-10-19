@@ -1,5 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLang, useList } from '@/lib/store.jsx';
+import { isHalloween } from '@/data/theme.js';
+import { nicknames } from '@/data/halloween.js';
+import { Pumpkin } from './icons.jsx';
 
 const scrollToId = (id) => {
   const el = document.getElementById(id);
@@ -79,6 +82,7 @@ function Row({ item, onOpen }) {
         <div className="row-main">
           <div className="row-name">
             <span>{itemName(item)}</span>
+            {isHalloween && nicknames[item.id] && <span className="tag nick"><Pumpkin />{tr(nicknames[item.id])}</span>}
             {item.spicy && <span className="tag hot">{t.spicy}</span>}
             {item.signature && <span className="tag">{t.signature}</span>}
             {item.special && !item.soldOut && <span className="tag pick">{t.special}</span>}

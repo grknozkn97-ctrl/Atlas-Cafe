@@ -5,6 +5,8 @@ import { CloseIcon } from './icons.jsx';
 
 import { INSTAGRAM_URL as INSTAGRAM, REVIEW_URL as GOOGLE } from '@/data/business.js';
 import { track } from '@/lib/track.js';
+import { isHalloween } from '@/data/theme.js';
+import { hui } from '@/data/halloween.js';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const get = (s, k) => { try { return s.getItem(k); } catch { return null; } };
@@ -24,7 +26,8 @@ const set = (s, k, v) => { try { s.setItem(k, v); } catch { /* storage off */ } 
     usually over): asks for a Google review.
 */
 export default function Mascot({ suppressed }) {
-  const { t } = useLang();
+  const { t: base, lang } = useLang();
+  const t = isHalloween ? { ...base, ...hui[lang] } : base;
   const reduce = useReducedMotion();
   const [phase, setPhase] = useState('off'); // off | peek | talk
   const [kind, setKind] = useState('insta');
@@ -144,7 +147,7 @@ export default function Mascot({ suppressed }) {
                 <Bean talking={phase === 'talk'} reduce={reduce} />
               </motion.span>
             </span>
-            <Cup />
+            {isHalloween ? <Cauldron /> : <Cup />}
           </motion.button>
         )}
       </AnimatePresence>
@@ -162,6 +165,22 @@ function Cup() {
       <path d="M12 7 H80 L76 29 Q74 36 64 36 H28 Q18 36 16 29 Z" fill="#fffdf7" stroke="#d9cfba" strokeWidth="1.2" />
       <path d="M13.6 14 H78.4 L77.6 18.5 H14.5 Z" fill="#2c4a38" />
       <ellipse cx="46" cy="7" rx="34" ry="3.4" fill="none" stroke="#d9cfba" strokeWidth="1.2" />
+    </svg>
+  );
+}
+
+function Cauldron() {
+  return (
+    <svg className="cup" viewBox="0 0 92 44" aria-hidden="true">
+      <ellipse cx="46" cy="40" rx="34" ry="4" fill="rgba(0,0,0,0.35)" />
+      <path d="M22 36 l-4 6 M70 36 l4 6" stroke="#0d0b0a" strokeWidth="4" strokeLinecap="round" />
+      <path d="M10 8 H82 Q86 30 66 37 H26 Q6 30 10 8 Z" fill="#1c1916" stroke="#3b342d" strokeWidth="1.4" />
+      <path d="M14 18 Q46 26 78 18" stroke="#3b342d" strokeWidth="1.2" fill="none" opacity="0.8" />
+      <ellipse cx="46" cy="8" rx="37" ry="4.6" fill="#2a2520" stroke="#4a4239" strokeWidth="1.4" />
+      <ellipse cx="46" cy="8" rx="33" ry="2.8" fill="#7bc65b" opacity="0.9" />
+      <circle cx="30" cy="5" r="2.2" fill="#a8e88a" opacity="0.9" />
+      <circle cx="60" cy="4" r="1.6" fill="#a8e88a" opacity="0.85" />
+      <circle cx="68" cy="6" r="1.1" fill="#a8e88a" opacity="0.8" />
     </svg>
   );
 }
@@ -191,7 +210,16 @@ function Bean({ talking, reduce }) {
       {/* ground shadow */}
       <ellipse cx="50" cy="113" rx="22" ry="3.5" fill="rgba(23,39,30,0.18)" />
 
-      {/* the world in a glass, held overhead */}
+      {/* the world in a glass, held overhead (a jack-o'-lantern at Halloween) */}
+      {isHalloween ? (
+        <motion.g animate={lift}>
+          <path d="M50 6 q2 -5 6 -5" stroke="#3d5a2a" strokeWidth="2.6" fill="none" strokeLinecap="round" />
+          <ellipse cx="50" cy="22" rx="17" ry="14.5" fill="#e8762c" stroke="#7a3510" strokeWidth="1.6" />
+          <path d="M42 9 Q38 22 42 35 M58 9 Q62 22 58 35 M50 8 V36" stroke="#c45a18" strokeWidth="1.3" fill="none" opacity="0.8" />
+          <path d="M41 18 l4 -4 l3 4 Z M52 18 l4 -4 l3 4 Z" fill="#ffd36b" />
+          <path d="M40 25 q10 9 20 0 l-3 3 l-3 -2 l-4 3 l-3 -3 l-3 2 Z" fill="#ffd36b" />
+        </motion.g>
+      ) : (
       <motion.g animate={lift}>
         <path d="M50 37 L50 44" stroke="#17271e" strokeWidth="2.4" strokeLinecap="round" />
         <g clipPath="url(#bowl)">
@@ -203,6 +231,7 @@ function Bean({ talking, reduce }) {
         <circle cx="50" cy="21" r="15.5" fill="none" stroke="#17271e" strokeWidth="2.6" />
         <path d="M41 11 q3-3 7-3.5" stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8" />
       </motion.g>
+      )}
 
       {/* arms */}
       <path d="M31 63 C 25 54, 30 44, 39 36" stroke="#4a2c18" strokeWidth="5" fill="none" strokeLinecap="round" />

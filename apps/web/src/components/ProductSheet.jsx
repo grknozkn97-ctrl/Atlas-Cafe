@@ -8,6 +8,9 @@ import { useLang, useList } from '@/lib/store.jsx';
 import { allergens } from '@/data/ingredients.js';
 import { extras as extrasData } from '@/data/menu.js';
 import { deals, dealForGroup } from '@/data/deals.js';
+import { isHalloween } from '@/data/theme.js';
+import { nicknames } from '@/data/halloween.js';
+import { Pumpkin } from './icons.jsx';
 
 // Content fades up just behind the sheet, one small step at a time.
 function Reveal({ i, children }) {
@@ -92,6 +95,7 @@ export default function ProductSheet({ item, onClose, onDeal }) {
             <Reveal i={i++}>
               <h2 className="sheet-name">{itemName(item)}</h2>
               {itemName(item) !== item.name && <div className="sheet-sub">{item.name}</div>}
+              {isHalloween && nicknames[item.id] && <div className="tag nick big"><Pumpkin />{tr(nicknames[item.id])}</div>}
               <div className="sheet-facts">
                 <span className="price">{money(item.price)}</span>
                 {item.size && <span className="fact">{item.size}</span>}

@@ -449,3 +449,107 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .group:first-of-type { padding-top: 10px; }
   .group-title { font-size: 25px; padding-top: 14px; }
 }
+
+/* Logo wrapper: invisible in the classic theme, a full moon at Halloween. */
+.logo-wrap { display: contents; }
+.top { position: relative; }
+.bats, .hw-banner { display: none; }
+.tag.nick { display: inline-flex; align-items: center; gap: 4px; }
+.tag.nick svg { width: 14px; height: 14px; }
+
+/* ═════════════ Halloween ═════════════
+   Night espresso background, bone text, pumpkin for anything you can tap
+   or that costs money. One loud moment: the logo as a full moon, with a
+   short flight of bats when the page opens. */
+:root[data-theme='halloween'] {
+  --ink: #efe5cf;
+  --green: #e8762c;
+  --green-soft: rgba(232, 118, 44, 0.16);
+  --espresso: #f4a45c;
+  --crema: #2a221c;
+  --brass: #e8762c;
+  --brass-soft: rgba(232, 118, 44, 0.13);
+  --paper: #15110e;
+  --card: #1f1914;
+  --line: #3a2f27;
+  --muted: #a99c86;
+  --danger: #ff8a6a;
+  --shadow-sheet: 0 -12px 40px rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+[data-theme='halloween'] body {
+  background:
+    radial-gradient(900px 360px at 85% -60px, rgba(232, 118, 44, 0.14), transparent 70%),
+    var(--paper);
+}
+[data-theme='halloween'] .logo-wrap {
+  display: grid; place-items: center; flex: none; width: 58px; height: 58px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #fff8e4 0%, #efe2c2 45%, #d5c296 100%);
+  box-shadow: 0 0 0 3px rgba(239, 226, 194, 0.08), 0 0 28px rgba(255, 210, 140, 0.35);
+}
+[data-theme='halloween'] .logo-wrap img { width: 30px; height: 48px; mix-blend-mode: multiply; }
+
+[data-theme='halloween'] .hw-banner {
+  display: flex; gap: 12px; align-items: center; margin-top: 12px; padding: 12px 14px; border-radius: 14px;
+  background: linear-gradient(100deg, rgba(232, 118, 44, 0.2), rgba(232, 118, 44, 0.06)); border: 1px solid rgba(232, 118, 44, 0.35);
+}
+[data-theme='halloween'] .hw-banner svg { width: 34px; height: 34px; flex: none; }
+[data-theme='halloween'] .hw-banner strong { display: block; font-family: var(--display); font-weight: 400; font-size: 19px; color: #ffb36b; }
+[data-theme='halloween'] .hw-banner span span { display: block; font-size: 13.5px; color: var(--ink); opacity: 0.85; margin-top: 2px; }
+
+[data-theme='halloween'] .bats {
+  display: block; position: absolute; top: 4px; left: 100%; width: 110px; height: 46px; fill: rgba(239, 229, 207, 0.55); pointer-events: none;
+  animation: bats-fly 7s ease-in-out 0.6s 1 both;
+}
+@keyframes bats-fly {
+  0% { transform: translate(0, 10px); opacity: 0; }
+  10% { opacity: 1; }
+  50% { transform: translate(calc(-50vw - 60px), -6px); }
+  90% { opacity: 1; }
+  100% { transform: translate(calc(-100vw - 160px), 8px); opacity: 0; }
+}
+
+[data-theme='halloween'] .catnav { background: rgba(21, 17, 14, 0.9); }
+[data-theme='halloween'] .when { background: rgba(21, 17, 14, 0.85); color: var(--ink); }
+[data-theme='halloween'] .when[data-live='true'],
+[data-theme='halloween'] .special-tag,
+[data-theme='halloween'] .hw-tag { background: var(--green); color: #1a0f06; }
+[data-theme='halloween'] .when[data-live='true']::before { background: #1a0f06; }
+[data-theme='halloween'] .stamp { color: #1a0f06; }
+[data-theme='halloween'] .chip[aria-current='true'] { background: var(--green); border-color: var(--green); color: #1a0f06; }
+[data-theme='halloween'] .filter-btn[data-on='true'],
+[data-theme='halloween'] .cta:not(.ghost),
+[data-theme='halloween'] .tag.pick,
+[data-theme='halloween'] .count-badge,
+[data-theme='halloween'] .bubble .go:not(.insta) { color: #1a0f06; }
+[data-theme='halloween'] .filter-btn[data-on='true'] svg,
+[data-theme='halloween'] .cta:not(.ghost) svg,
+[data-theme='halloween'] .extra .box svg { stroke: #1a0f06; }
+[data-theme='halloween'] .toggle[aria-pressed='true'] { background: var(--ink); color: #15110e; border-color: var(--ink); }
+[data-theme='halloween'] .toggle[aria-pressed='true'] .num { background: #15110e; color: var(--ink); }
+[data-theme='halloween'] .allergen,
+[data-theme='halloween'] .toggle,
+[data-theme='halloween'] .lang-opt { background: var(--card); }
+[data-theme='halloween'] .allergen .num { color: #1a0f06; }
+[data-theme='halloween'] .note-text { color: #d9cfbb; }
+[data-theme='halloween'] .tag.hot { background: rgba(255, 110, 80, 0.16); }
+[data-theme='halloween'] .tag.out { background: #2b241e; }
+[data-theme='halloween'] .tag.nick { background: rgba(232, 118, 44, 0.16); color: #ffb36b; }
+[data-theme='halloween'] .tag.nick.big { font-size: 13.5px; padding: 4px 10px; margin-top: 10px; width: fit-content; }
+[data-theme='halloween'] .open-state[data-open='true'] { color: #9ad874; }
+[data-theme='halloween'] .open-state[data-open='true']::before { background: #9ad874; box-shadow: 0 0 0 3px rgba(154, 216, 116, 0.18); }
+[data-theme='halloween'] .listbar { background: var(--green); color: #1a0f06; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5); }
+[data-theme='halloween'] .listbar .n { background: #15110e; color: var(--ink); }
+[data-theme='halloween'] .foot { background: #0c0907; }
+[data-theme='halloween'] .waiter { color: #17271e; }
+[data-theme='halloween'] .waiter .cta.ghost { color: #17271e; border-color: #ddd; }
+[data-theme='halloween'] .rating { background: var(--card); }
+[data-theme='halloween'] .search input::placeholder { color: #7f7464; }
+[data-theme='halloween'] .grabber { background: rgba(239, 229, 207, 0.5); }
+[data-theme='halloween'] .sheet-close:not(.plain) { background: rgba(0, 0, 0, 0.55); }
+[data-theme='halloween'] .deal { box-shadow: 0 1px 0 var(--line), 0 8px 22px rgba(0, 0, 0, 0.35); }
+[data-theme='halloween'] .hw-picks h2 { color: #ffb36b; }
+[data-theme='halloween'] .pick-card .deal-img { display: grid; place-items: center; background: radial-gradient(circle at 50% 60%, #3a2a1c, #1f1914 70%); }
+[data-theme='halloween'] .pick-pumpkin { width: 56px; height: 56px; }
+[data-theme='halloween'] .pick-card .deal-img .when { position: absolute; }
+@media (prefers-reduced-motion: reduce) { [data-theme='halloween'] .bats { display: none; } }
