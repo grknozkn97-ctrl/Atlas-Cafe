@@ -11,6 +11,7 @@ import { deals, dealForGroup } from '@/data/deals.js';
 import { isHalloween } from '@/data/theme.js';
 import { nicknames } from '@/data/halloween.js';
 import { Pumpkin } from './icons.jsx';
+import { PhotoDecor } from './Halloween.jsx';
 
 // Content fades up just behind the sheet, one small step at a time.
 function Reveal({ i, children }) {
@@ -89,6 +90,7 @@ export default function ProductSheet({ item, onClose, onDeal }) {
                 animate={{ scale: 1 }}
                 transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
               />
+              {isHalloween && <PhotoDecor id={item.id} big />}
             </div>
           )}
           <div className={`sheet-body ${item.img ? '' : 'no-photo'}`}>

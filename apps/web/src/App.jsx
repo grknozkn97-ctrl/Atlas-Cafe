@@ -7,6 +7,7 @@ import Top from '@/components/Top.jsx';
 import Deals, { HalloweenPicks } from '@/components/Deals.jsx';
 import { THEME, isHalloween } from '@/data/theme.js';
 import { picks as hwPicks } from '@/data/halloween.js';
+import { TrickOrTreaters } from '@/components/Halloween.jsx';
 import { CatNav, MenuList, scrollToId } from '@/components/Menu.jsx';
 import ProductSheet, { DealSheet } from '@/components/ProductSheet.jsx';
 import { FilterSheet, Footer, LangSheet, ListBar, ListSheet } from '@/components/Panels.jsx';
@@ -90,6 +91,7 @@ function Page() {
 
   return (
     <>
+      {isHalloween && <TrickOrTreaters />}
       <Top
         query={query}
         setQuery={setQuery}

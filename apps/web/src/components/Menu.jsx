@@ -3,6 +3,7 @@ import { useLang, useList } from '@/lib/store.jsx';
 import { isHalloween } from '@/data/theme.js';
 import { nicknames } from '@/data/halloween.js';
 import { Pumpkin } from './icons.jsx';
+import { PhotoDecor } from './Halloween.jsx';
 
 const scrollToId = (id) => {
   const el = document.getElementById(id);
@@ -101,6 +102,7 @@ function Row({ item, onOpen }) {
         {photo ? (
           <div className="row-thumb">
             <img src={item.img} alt="" loading="lazy" decoding="async" width="92" height="92" onError={() => setImgOk(false)} />
+            {isHalloween && <PhotoDecor id={item.id} />}
             {count > 0 && <span className="count-badge" aria-label={t.inList(count)}>{count}</span>}
           </div>
         ) : (
