@@ -433,3 +433,19 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .deal.special { box-shadow: 0 0 0 2px var(--green), 0 6px 18px rgba(23, 39, 30, 0.07); }
 
 .foot a.rating { color: var(--ink); }
+
+/* Group headings: a clear break between groups while scrolling. */
+.group { padding-top: 34px; }
+.group:first-of-type { padding-top: 14px; }
+.group-title {
+  font-size: 27px; color: var(--ink); line-height: 1.1; margin: 0 0 6px;
+  padding-top: 16px; border-top: 2px solid var(--ink);
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+}
+.group-title .count { font-family: var(--text); font-size: 13px; font-weight: 600; color: var(--muted); }
+.group:first-of-type .group-title { border-top: 0; padding-top: 0; }
+@media (max-width: 639px) {
+  .group { padding-top: 30px; }
+  .group:first-of-type { padding-top: 10px; }
+  .group-title { font-size: 25px; padding-top: 14px; }
+}
