@@ -9,7 +9,7 @@ import { allergens } from '@/data/ingredients.js';
 import { extras as extrasData } from '@/data/menu.js';
 import { deals, dealForGroup } from '@/data/deals.js';
 import { isHalloween } from '@/data/theme.js';
-import { nicknames } from '@/data/halloween.js';
+import { nicknames, featured, tales, hui } from '@/data/halloween.js';
 import { Pumpkin } from './icons.jsx';
 import { PhotoDecor } from './Halloween.jsx';
 
@@ -44,7 +44,7 @@ export function AllergenBlock({ al }) {
 }
 
 export default function ProductSheet({ item, onClose, onDeal }) {
-  const { t, tr, itemName, ingList, money } = useLang();
+  const { t, tr, itemName, ingList, money, lang } = useLang();
   const { add, perItem } = useList();
   const [chosen, setChosen] = useState([]);
   const [justAdded, setJustAdded] = useState(false);
@@ -98,6 +98,7 @@ export default function ProductSheet({ item, onClose, onDeal }) {
               <h2 className="sheet-name">{itemName(item)}</h2>
               {itemName(item) !== item.name && <div className="sheet-sub">{item.name}</div>}
               {isHalloween && nicknames[item.id] && <div className="tag nick big"><Pumpkin />{tr(nicknames[item.id])}</div>}
+              {isHalloween && featured.includes(item.id) && <p className="feat-tale sheet">{hui[lang].featuredTag} · {tr(tales[item.id])}</p>}
               <div className="sheet-facts">
                 <span className="price">{money(item.price)}</span>
                 {item.size && <span className="fact">{item.size}</span>}

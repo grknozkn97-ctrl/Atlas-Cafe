@@ -4,9 +4,9 @@ import { applyLive } from '@/lib/live.js';
 import { sections as baseSections, itemsById } from '@/data/menu.js';
 import { ingredients } from '@/data/ingredients.js';
 import Top from '@/components/Top.jsx';
-import Deals, { HalloweenPicks } from '@/components/Deals.jsx';
+import Deals from '@/components/Deals.jsx';
 import { THEME, isHalloween } from '@/data/theme.js';
-import { picks as hwPicks } from '@/data/halloween.js';
+import { featureFirst } from '@/data/halloween.js';
 import { TrickOrTreaters } from '@/components/Halloween.jsx';
 import { CatNav, MenuList, scrollToId } from '@/components/Menu.jsx';
 import ProductSheet, { DealSheet } from '@/components/ProductSheet.jsx';
@@ -21,7 +21,10 @@ const fold = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,
 function Page() {
   const { lang, t } = useLang();
   const live = useLiveData();
-  const allSections = useMemo(() => applyLive(baseSections, live), [live]);
+  const allSections = useMemo(() => {
+    const withLive = applyLive(baseSections, live);
+    return isHalloween ? featureFirst(withLive) : withLive;
+  }, [live]);
   const [query, setQuery] = useState('');
   const [hidden, setHidden] = useState(() => {
     try { return JSON.parse(sessionStorage.getItem('atlas-hide') || '[]'); } catch { return []; }
@@ -74,12 +77,6 @@ function Page() {
     for (const s of allSections) for (const g of s.groups) for (const it of g.items) if (it.special && !it.soldOut) out.push(it);
     return out;
   }, [allSections]);
-  const halloweenItems = useMemo(() => {
-    if (!isHalloween) return [];
-    const flat = {};
-    for (const s of allSections) for (const g of s.groups) for (const it of g.items) flat[it.id] = it;
-    return hwPicks.map((id) => flat[id]).filter((it) => it && !it.soldOut);
-  }, [allSections]);
   useEffect(() => {
     document.documentElement.dataset.theme = THEME;
     const meta = document.querySelector('meta[name="theme-color"]');
@@ -101,7 +98,6 @@ function Page() {
         hiddenCount={hiddenCount}
         clearFilter={() => setHidden([])}
       />
-      {!query && isHalloween && <HalloweenPicks items={halloweenItems} onOpen={openItem} />}
       {!query && <Deals onOpen={openDeal} specials={specials} onOpenItem={openItem} />}
       {sections.length > 0 ? (
         <>

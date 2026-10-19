@@ -12,21 +12,43 @@ export const nicknames = {
   s1: T('Graveyard Cake', 'Torta sa groblja', 'Torta del cimitero', 'Gâteau du cimetière', 'Mezarlık Pastası'),
   sn4: T('Monster Mix', 'Čudovišni miks', 'Mix mostruoso', 'Mix monstre', 'Canavar Mix'),
   c6: T('Dragon’s Breath Chicken', 'Piletina „zmajev dah”', 'Pollo alito di drago', 'Poulet souffle du dragon', 'Ejderha Nefesi Tavuk'),
+  t2: T('Mummy Toast', 'Mumija tost', 'Toast della mummia', 'Croque momie', 'Mumya Tost'),
   ccf2: T('Ghost Mocha', 'Moka duh', 'Moka fantasma', 'Moka fantôme', 'Hayalet Mocha'),
 };
 
-// Shown first in the deals rail, in this order.
-export const picks = ['fz4', 'ck1', 'p3', 'hd4', 'sn4', 's1', 'ck7', 'ccf2', 'c6'];
+// The owner's Halloween specials: moved to the top of their own group and
+// shown in an orange frame with a short line of story.
+export const featured = ['sn4', 'p3', 's1', 'c6', 't2'];
+
+export const tales = {
+  sn4: T('A pile big enough to feed the whole monster crew.', 'Gomila dovoljna za cijelu ekipu čudovišta.', 'Una montagna che sfama tutta la banda dei mostri.', 'Une montagne pour nourrir toute la bande de monstres.', 'Bütün canavar ekibini doyuracak kadar büyük bir tabak.'),
+  p3: T('Hot enough to wake the devil. Proceed with caution.', 'Dovoljno ljuto da probudi đavola. Oprezno.', 'Piccante da svegliare il diavolo. Con cautela.', 'Assez piquant pour réveiller le diable. Avec prudence.', 'Şeytanı uyandıracak kadar acı. Dikkatli ol.'),
+  s1: T('Dark chocolate and biscuit, dug up fresh every morning.', 'Tamna čokolada i keks, svježe iskopani svako jutro.', 'Cioccolato fondente e biscotto, dissotterrati freschi ogni mattina.', 'Chocolat noir et biscuit, déterrés frais chaque matin.', 'Bitter çikolata ve bisküvi, her sabah taze taze mezardan çıkıyor.'),
+  c6: T('Chili sauce with a fiery breath. Keep a drink close.', 'Čili sos s vatrenim dahom. Neka piće bude blizu.', 'Salsa piccante dal respiro di fuoco. Tieni una bibita vicina.', 'Une sauce pimentée au souffle de feu. Gardez une boisson à portée.', 'Ateş gibi nefesli acı sos. İçeceğini yanında tut.'),
+  t2: T('Our house toast, wrapped up for Halloween.', 'Naš kućni tost, umotan za Halloween.', 'Il toast della casa, avvolto per Halloween.', 'Le croque de la maison, emmailloté pour Halloween.', 'Evimizin tostu, Halloween için sargılara sarıldı.'),
+};
+
+// Move the featured dishes to the top of their groups.
+export function featureFirst(sections) {
+  return sections.map((s) => ({
+    ...s,
+    groups: s.groups.map((g) => {
+      const top = g.items.filter((it) => featured.includes(it.id));
+      if (!top.length) return g;
+      return { ...g, items: [...top, ...g.items.filter((it) => !featured.includes(it.id))] };
+    }),
+  }));
+}
 
 export const hui = {
-  en: { bannerTitle: 'Halloween at Atlas', bannerText: 'Spooky nicknames on the menu until 1 November. Look for the pumpkin.', pickTag: 'Halloween pick', picksTitle: 'Halloween picks',
+  en: { featuredTag: 'Halloween special', bannerTitle: 'Halloween at Atlas', bannerText: 'Until 1 November our Halloween specials wear an orange frame. Look for the pumpkins.', pickTag: 'Halloween pick', picksTitle: 'Halloween picks',
     mascotInsta: 'Boo! Our Halloween specials go up on Instagram first.', mascotGoogle: 'Survived the night? Thirty seconds on Google helps a small café a lot.' },
-  me: { bannerTitle: 'Halloween u Atlasu', bannerText: 'Jeziva imena na meniju do 1. novembra. Tražite bundevu.', pickTag: 'Halloween izbor', picksTitle: 'Halloween izbor',
+  me: { featuredTag: 'Halloween specijal', bannerTitle: 'Halloween u Atlasu', bannerText: 'Do 1. novembra naši Halloween specijaliteti su u narandžastom okviru. Tražite bundeve.', pickTag: 'Halloween izbor', picksTitle: 'Halloween izbor',
     mascotInsta: 'Bu! Halloween specijalitete prvo objavljujemo na Instagramu.', mascotGoogle: 'Preživjeli ste noć? Trideset sekundi na Googlu mnogo znači malom kafiću.' },
-  it: { bannerTitle: 'Halloween all’Atlas', bannerText: 'Nomi da brivido nel menù fino al 1° novembre. Cerca la zucca.', pickTag: 'Scelta di Halloween', picksTitle: 'Scelte di Halloween',
+  it: { featuredTag: 'Speciale Halloween', bannerTitle: 'Halloween all’Atlas', bannerText: 'Fino al 1° novembre le specialità di Halloween hanno la cornice arancione. Cerca le zucche.', pickTag: 'Scelta di Halloween', picksTitle: 'Scelte di Halloween',
     mascotInsta: 'Bu! Le specialità di Halloween escono prima su Instagram.', mascotGoogle: 'Sopravvissuti alla notte? Trenta secondi su Google aiutano tanto un piccolo caffè.' },
-  fr: { bannerTitle: 'Halloween chez Atlas', bannerText: 'Des noms qui font frissonner sur la carte jusqu’au 1er novembre. Cherchez la citrouille.', pickTag: 'Choix d’Halloween', picksTitle: 'Les choix d’Halloween',
+  fr: { featuredTag: 'Spécial Halloween', bannerTitle: 'Halloween chez Atlas', bannerText: 'Jusqu’au 1er novembre, nos spécialités d’Halloween ont un cadre orange. Cherchez les citrouilles.', pickTag: 'Choix d’Halloween', picksTitle: 'Les choix d’Halloween',
     mascotInsta: 'Bouh ! Nos spécialités d’Halloween paraissent d’abord sur Instagram.', mascotGoogle: 'Vous avez survécu à la nuit ? Trente secondes sur Google aident beaucoup un petit café.' },
-  tr: { bannerTitle: 'Atlas’ta Halloween', bannerText: '1 Kasım’a kadar menüde ürperten isimler var. Balkabağı işaretine bak.', pickTag: 'Halloween seçkisi', picksTitle: 'Halloween seçkisi',
+  tr: { featuredTag: 'Halloween özel', bannerTitle: 'Atlas’ta Halloween', bannerText: '1 Kasım’a kadar Halloween özel lezzetlerimiz turuncu çerçevede. Balkabaklarını takip et.', pickTag: 'Halloween seçkisi', picksTitle: 'Halloween seçkisi',
     mascotInsta: 'Bö! Halloween lezzetlerini önce Instagram’da paylaşıyoruz.', mascotGoogle: 'Geceyi atlattın mı? Google’da otuz saniye küçük bir kafeye çok şey katar.' },
 };

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLang, useList } from '@/lib/store.jsx';
 import { isHalloween } from '@/data/theme.js';
-import { nicknames } from '@/data/halloween.js';
+import { nicknames, featured, tales, hui } from '@/data/halloween.js';
 import { Pumpkin } from './icons.jsx';
 import { PhotoDecor } from './Halloween.jsx';
 
@@ -71,24 +71,32 @@ export function CatNav({ sections, active, setActive }) {
 }
 
 function Row({ item, onOpen }) {
-  const { itemName, ingList, tr, money, t } = useLang();
+  const { itemName, ingList, tr, money, t, lang } = useLang();
   const { perItem } = useList();
   const [imgOk, setImgOk] = useState(true);
+  const feat = isHalloween && featured.includes(item.id);
   const desc = item.ing?.length ? ingList(item).join(', ') : tr(item.note);
   const count = perItem[item.id] || 0;
   const photo = item.img && imgOk;
   return (
-    <li>
-      <button type="button" className={`row ${photo ? '' : 'text-row'} ${item.soldOut ? 'sold' : ''}`} onClick={() => onOpen(item)}>
+    <li className={feat ? 'feat-li' : undefined}>
+      <button type="button" className={`row ${photo ? '' : 'text-row'} ${item.soldOut ? 'sold' : ''} ${feat ? 'featured' : ''}`} onClick={() => onOpen(item)}>
         <div className="row-main">
+          {feat && (
+            <>
+              <span className="feat-badge"><Pumpkin />{hui[lang].featuredTag}</span>
+              <div className="feat-nick">{tr(nicknames[item.id])}</div>
+            </>
+          )}
           <div className="row-name">
             <span>{itemName(item)}</span>
-            {isHalloween && nicknames[item.id] && <span className="tag nick"><Pumpkin />{tr(nicknames[item.id])}</span>}
+            {isHalloween && !feat && nicknames[item.id] && <span className="tag nick"><Pumpkin />{tr(nicknames[item.id])}</span>}
             {item.spicy && <span className="tag hot">{t.spicy}</span>}
             {item.signature && <span className="tag">{t.signature}</span>}
             {item.special && !item.soldOut && <span className="tag pick">{t.special}</span>}
             {item.soldOut && <span className="tag out">{t.soldOut}</span>}
           </div>
+          {feat && <div className="feat-tale">{tr(tales[item.id])}</div>}
           {desc && <div className="row-desc">{desc}</div>}
           {photo ? (
             <div className="row-meta">

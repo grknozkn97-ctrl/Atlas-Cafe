@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { useLang, podgoricaHour, isLive } from '@/lib/store.jsx';
 import { deals } from '@/data/deals.js';
-import { hui, nicknames } from '@/data/halloween.js';
 import { Pumpkin } from './icons.jsx';
 import { PhotoDecor } from './Halloween.jsx';
 import { isHalloween } from '@/data/theme.js';
@@ -49,36 +48,6 @@ function SpecialCard({ item, onOpen }) {
         <div className="deal-price"><strong>{money(item.price)}</strong></div>
       </div>
     </button>
-  );
-}
-
-function PickCard({ item, onOpen }) {
-  const { itemName, tr, money } = useLang();
-  return (
-    <button type="button" className="deal pick-card" onClick={() => onOpen(item)}>
-      <div className="deal-img">
-        {item.img ? <img src={item.img} alt="" loading="lazy" decoding="async" onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} /> : <Pumpkin className="pick-pumpkin" />}
-        <PhotoDecor id={item.id} />
-      </div>
-      <div className="deal-body">
-        <div className="deal-title">{tr(nicknames[item.id])}</div>
-        <div className="deal-detail">{itemName(item)}</div>
-        <div className="deal-price"><strong>{money(item.price)}</strong></div>
-      </div>
-    </button>
-  );
-}
-
-export function HalloweenPicks({ items, onOpen }) {
-  const { lang } = useLang();
-  if (!items.length) return null;
-  return (
-    <section className="deals wrap hw-picks" aria-label={hui[lang].picksTitle}>
-      <h2>{hui[lang].picksTitle}</h2>
-      <div className="deal-rail">
-        {items.map((it) => <PickCard key={it.id} item={it} onOpen={onOpen} />)}
-      </div>
-    </section>
   );
 }
 
