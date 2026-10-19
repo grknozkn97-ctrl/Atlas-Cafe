@@ -14,6 +14,7 @@ import { FilterSheet, Footer, LangSheet, ListBar, ListSheet } from '@/components
 import Mascot from '@/components/Mascot.jsx';
 import { Analytics } from '@vercel/analytics/react';
 import { track } from '@/lib/track.js';
+import { publishMenuSchema } from '@/lib/seo.js';
 
 // Lower-case and strip accents so "cokertme" finds "Çökertme" and "kafa" finds "Kafa".
 const fold = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
@@ -25,6 +26,8 @@ function Page() {
     const withLive = applyLive(baseSections, live);
     return isHalloween ? featureFirst(withLive) : withLive;
   }, [live]);
+  // Keep the schema.org menu in step with the live prices (plain names, classic order).
+  useEffect(() => { publishMenuSchema(applyLive(baseSections, live)); }, [live]);
   const [query, setQuery] = useState('');
   const [hidden, setHidden] = useState(() => {
     try { return JSON.parse(sessionStorage.getItem('atlas-hide') || '[]'); } catch { return []; }

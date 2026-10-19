@@ -26,13 +26,20 @@
 		{
 			"@context": "https://schema.org",
 			"@type": "CafeOrCoffeeShop",
+			"@id": "https://www.cafeatlas.me/#cafe",
 			"name": "Atlas Cafe & Bar",
+			"description": "Café and bar on Hercegovačka street in central Podgorica, with a terrace in the pedestrian zone. Turkish-style breakfast (menemen, pişi, pancakes), coffee, frozen drinks and shakes, pasta, chicken dishes, burgers, pizza, cocktails and beer.",
 			"url": "https://www.cafeatlas.me/",
+			"image": ["https://www.cafeatlas.me/og-image.png", "https://www.cafeatlas.me/logo.png"],
+			"logo": "https://www.cafeatlas.me/logo.png",
 			"telephone": "+38267036687",
 			"email": "info@cafeatlas.me",
-			"servesCuisine": ["Breakfast", "Pasta", "Burgers", "Coffee", "Cocktails"],
+			"servesCuisine": ["Breakfast", "Turkish breakfast", "Coffee", "Pasta", "Burgers", "Pizza", "Cocktails"],
 			"priceRange": "€",
-			"hasMenu": "https://www.cafeatlas.me/",
+			"currenciesAccepted": "EUR",
+			"paymentAccepted": "Cash, Credit Card, Debit Card",
+			"acceptsReservations": true,
+			"hasMenu": { "@id": "https://www.cafeatlas.me/#menu", "url": "https://www.cafeatlas.me/" },
 			"address": {
 				"@type": "PostalAddress",
 				"streetAddress": "Hercegovačka 7",
@@ -40,7 +47,21 @@
 				"postalCode": "81000",
 				"addressCountry": "ME"
 			},
-			"sameAs": ["https://www.instagram.com/atlascafefoodbar/"]
+			"geo": { "@type": "GeoCoordinates", "latitude": 42.4432052, "longitude": 19.2613765 },
+			"hasMap": "https://maps.google.com/?cid=14011442871643039557",
+			"openingHoursSpecification": [
+				{
+					"@type": "OpeningHoursSpecification",
+					"dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+					"opens": "09:00",
+					"closes": "21:00"
+				}
+			],
+			"amenityFeature": [
+				{ "@type": "LocationFeatureSpecification", "name": "Outdoor terrace", "value": true },
+				{ "@type": "LocationFeatureSpecification", "name": "Free Wi-Fi", "value": true }
+			],
+			"sameAs": ["https://www.instagram.com/atlascafefoodbar/", "https://maps.google.com/?cid=14011442871643039557"]
 		}
 		</script>
 	</head>
