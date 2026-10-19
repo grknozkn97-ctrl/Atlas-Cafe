@@ -49,7 +49,7 @@ function itemRow(it) {
     return `<div class="feat">
       ${it.img ? `<img class="fimg" src="${esc(it.img)}" alt="">` : ''}
       <div class="fbody">
-        <div class="ftag">${pumpkin('pk s')} Halloween specijal · special</div>
+        <div class="ftag">${pumpkin('pk s')}<span>Halloween specijal · special</span></div>
         <div class="line"><span class="nm">${esc(nick.me)}</span><span class="dots"></span><span class="pr">${eur(it.price)}</span></div>
         <div class="fnick">${esc(nick.en)} — ${esc(me)}${en !== me ? ' / ' + esc(en) : ''}</div>
         <div class="tale">${esc(tales[it.id].me)}<br><i>${esc(tales[it.id].en)}</i></div>
@@ -60,7 +60,7 @@ function itemRow(it) {
   return `<div class="it">
     <div class="line"><span class="nm">${esc(me)}</span>${tags}<span class="dots"></span><span class="pr">${eur(it.price)}</span></div>
     ${en !== me ? `<div class="en">${esc(en)}</div>` : ''}
-    ${nick ? `<div class="nick">${pumpkin('pk xs')} ${esc(nick.me)} · ${esc(nick.en)}</div>` : ''}
+    ${nick ? `<div class="nick">Halloween: ${esc(nick.me)} · ${esc(nick.en)}</div>` : ''}
     ${d || it.al?.length ? `<div class="ds">${esc(d)} ${alg(it)}</div>` : ''}
   </div>`;
 }
@@ -68,7 +68,7 @@ function itemRow(it) {
 const group = (sid, gid) => {
   const g = grp(sid, gid);
   const extras = g.extras ? `<div class="extras">Dodaci · Extras: ${esc(extrasLine(g.extras))}</div>` : '';
-  return `<section class="grp"><h3>${esc(g.title.me)}${g.title.en !== g.title.me ? ` <em>${esc(g.title.en)}</em>` : ''}</h3>${ordered(g).map(itemRow).join('')}${extras}</section>`;
+  return `<section class="grp"><h3><span class="h-me">${esc(g.title.me)}</span>${g.title.en !== g.title.me ? `<span class="h-en">${esc(g.title.en)}</span>` : ''}</h3>${ordered(g).map(itemRow).join('')}${extras}</section>`;
 };
 
 const { extras } = await import(D + 'menu.js');
@@ -108,7 +108,7 @@ const dealCard = (d) => `
     ${d.regular ? `<div class="save">−${eur(d.regular - d.price)}</div>` : d.saveUpTo ? `<div class="save sm">do · up to −${eur(d.saveUpTo)}</div>` : ''}
   </div>`;
 
-const strip = `<section class="strip"><h3>Ponude dana <em>Daily deals</em></h3><div class="deals">${deals.map(dealCard).join('')}</div></section>`;
+const strip = `<section class="strip"><h3><span class="h-me">Ponude dana</span><span class="h-en">Daily deals</span></h3><div class="deals">${deals.map(dealCard).join('')}</div></section>`;
 
 const p1 = page('Kuhinja · Kitchen', `
   <div class="col">${['breakfast', 'toast'].map((g) => group('kitchen', g)).join('')}</div>
@@ -123,13 +123,13 @@ const p3 = page('Pića · Drinks', `
   <div class="col">${['soft-drinks', 'frozen', 'milkshake'].map((g) => group('drinks', g)).join('')}</div>`, 3, 'Pića', 'Drinks');
 
 const qrSvg = await QR.toString(SITE + '/', { type: 'svg', margin: 0, errorCorrectionLevel: 'M', color: { dark: '#15110e', light: '#efe5cf' } });
-const legend = Object.entries(allergens).map(([n, a]) => `<li><b>${n}</b> ${esc(a.me)}${a.en !== a.me ? ` <i>${esc(a.en)}</i>` : ''}</li>`).join('');
+const legend = Object.entries(allergens).map(([n, a]) => `<li><span class="lnum">${n}</span><span class="lme">${esc(a.me)}</span>${a.en !== a.me ? `<span class="len">${esc(a.en)}</span>` : ''}</li>`).join('');
 
 const p4 = page('Bar', `
   <div class="col">${['cocktail', 'beer'].map((g) => group('bar', g)).join('')}</div>
   <div class="col">${['wine', 'spirits'].map((g) => group('bar', g)).join('')}
     <div class="note">Alkohol samo za osobe starije od 18 godina · Alcohol served to guests over 18 only</div>
-    <section class="grp legendbox"><h3>Alergeni <em>Allergens</em></h3>
+    <section class="grp legendbox"><h3><span class="h-me">Alergeni</span><span class="h-en">Allergens</span></h3>
       <ul class="legend">${legend}</ul>
       <p class="small">Prema EU uredbi 1169/2011. Ako imate alergiju, recite konobaru. · EU Regulation 1169/2011. If you have an allergy, please tell your waiter.</p>
     </section>
@@ -175,15 +175,16 @@ body { font-family: 'Figtree', Arial, sans-serif; color: #efe5cf; -webkit-print-
 .cols { flex: 1; min-height: 0; display: flex; gap: 30px; padding-top: 11px; }
 .col { flex: 1; min-width: 0; }
 .grp { margin-bottom: 9px; }
-.grp h3 { font-family: 'Gloock', Georgia, serif; font-weight: 400; font-size: 18.5px; color: #efe5cf; border-bottom: 1px solid #4a3d30; padding-bottom: 3px; margin-bottom: 5px; }
-.grp h3 em { font-family: 'Figtree', Arial, sans-serif; font-style: normal; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #a89a82; margin-left: 6px; }
+.grp h3 { display: flex; align-items: baseline; gap: 9px; font-weight: 400; border-bottom: 1px solid #4a3d30; padding-bottom: 3px; margin-bottom: 5px; }
+.h-me { font-family: 'Gloock', Georgia, serif; font-weight: 400; font-size: 18.5px; color: #efe5cf; }
+.h-en { font-family: 'Figtree', Arial, sans-serif; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #a89a82; }
 .it { margin-bottom: 5px; }
 .line { display: flex; align-items: baseline; gap: 5px; }
 .nm { font-weight: 700; font-size: 13px; color: #efe5cf; }
 .dots { flex: 1; border-bottom: 1px dotted #5c4d3d; transform: translateY(-3px); min-width: 10px; }
 .pr { font-weight: 700; font-size: 13px; color: #f4a45c; white-space: nowrap; }
-.sz { font-size: 9.6px; color: #a89a82; white-space: nowrap; }
-.hot { font-size: 8.5px; font-weight: 700; color: #ff7a59; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+.sz { padding-left: 3px; font-size: 9.6px; color: #a89a82; white-space: nowrap; }
+.hot { padding-left: 3px; font-size: 8.5px; font-weight: 700; color: #ff7a59; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
 .en { font-size: 10.8px; color: #c9bba0; font-style: italic; line-height: 1.25; }
 .ds { font-size: 10px; color: #a89a82; line-height: 1.3; }
 .al { color: #f4a45c; font-weight: 700; font-size: 9.2px; white-space: nowrap; }
@@ -193,14 +194,13 @@ body { font-family: 'Figtree', Arial, sans-serif; color: #efe5cf; -webkit-print-
 .feat { display: flex; gap: 9px; background: #2a1a0f; border: 1.5px solid #e8762c; border-radius: 8px; padding: 7px 9px 7px 7px; margin: 3px 0 7px; }
 .fimg { width: 58px; height: 58px; border-radius: 6px; object-fit: cover; flex: none; background: #3a2616; }
 .fbody { flex: 1; min-width: 0; }
-.ftag { font-size: 8.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #e8762c; margin-bottom: 2px; }
+.ftag { display: flex; align-items: center; gap: 4px; font-size: 8.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #e8762c; margin-bottom: 2px; }
 .feat .nm { font-family: 'Gloock', Georgia, serif; font-weight: 400; font-size: 16.5px; color: #f4a45c; }
 .feat .pr { font-size: 13px; }
 .fnick { font-size: 10.2px; color: #efe5cf; font-weight: 600; margin: 1px 0 2px; }
 .tale { font-size: 9.8px; color: #c9bba0; line-height: 1.3; margin-bottom: 2px; }
 .strip { border-top: 2px solid #e8762c; padding-top: 6px; margin-top: 2px; }
-.strip h3 { font-family: 'Gloock', Georgia, serif; font-weight: 400; font-size: 18.5px; margin-bottom: 4px; }
-.strip h3 em { font-family: 'Figtree', Arial, sans-serif; font-style: normal; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #a89a82; margin-left: 6px; }
+.strip h3 { display: flex; align-items: baseline; gap: 9px; font-weight: 400; margin-bottom: 4px; }
 .deals { display: flex; gap: 10px; }
 .deal { flex: 1; position: relative; border: 1.5px solid #e8762c; border-radius: 9px; padding: 8px 9px; background: #2a1a0f; }
 .dt { font-family: 'Gloock', Georgia, serif; font-size: 15px; color: #f4a45c; line-height: 1.1; padding-right: 34px; }
@@ -211,9 +211,11 @@ body { font-family: 'Figtree', Arial, sans-serif; color: #efe5cf; -webkit-print-
 .hrs { margin-left: auto; font-size: 9px; font-weight: 700; color: #15110e; background: #e8762c; border-radius: 10px; padding: 1px 7px; }
 .save { position: absolute; top: -9px; right: -6px; background: #e8762c; color: #15110e; font-weight: 800; font-size: 10.5px; border-radius: 12px; padding: 3px 7px; transform: rotate(6deg); }
 .save.sm { font-size: 8.5px; }
-.legend { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 3px 12px; font-size: 10px; color: #efe5cf; }
-.legend b { display: inline-block; width: 17px; height: 17px; line-height: 17px; text-align: center; border-radius: 50%; background: #e8762c; color: #15110e; font-size: 9px; margin-right: 4px; }
-.legend i { color: #a89a82; font-size: 9px; }
+.legend { list-style: none; display: flex; flex-wrap: wrap; }
+.legend li { width: 50%; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.lnum { width: 18px; height: 18px; flex: none; border-radius: 9px; background: #e8762c; color: #15110e; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.lme { font-size: 10px; color: #efe5cf; }
+.len { font-size: 9px; color: #a89a82; font-style: italic; }
 .small { font-size: 9px; color: #a89a82; line-height: 1.35; margin-top: 7px; }
 .note { font-size: 9px; color: #a89a82; margin: 6px 0 12px; }
 .qrbox { display: flex; gap: 14px; align-items: center; background: #1f1914; border: 1.5px solid #e8762c; border-radius: 10px; padding: 12px; margin: 6px 0 12px; }
