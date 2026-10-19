@@ -29,4 +29,4 @@ otherwise English). A QR code can force a language: `https://www.cafeatlas.me/?l
 ## Build
 
 `npm install` then `npm run build` at the repository root. Vercel does this automatically on
-every push; `vercel.json` sends every page address to the menu so links like `/drinks` work.
+every push (project root: `apps/web`); `apps/web/vercel.json` sends every page address to the menu so links like `/drinks` work.
