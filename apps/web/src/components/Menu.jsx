@@ -75,12 +75,14 @@ function Row({ item, onOpen }) {
   const photo = item.img && imgOk;
   return (
     <li>
-      <button type="button" className={`row ${photo ? '' : 'text-row'}`} onClick={() => onOpen(item)}>
+      <button type="button" className={`row ${photo ? '' : 'text-row'} ${item.soldOut ? 'sold' : ''}`} onClick={() => onOpen(item)}>
         <div className="row-main">
           <div className="row-name">
             <span>{itemName(item)}</span>
             {item.spicy && <span className="tag hot">{t.spicy}</span>}
             {item.signature && <span className="tag">{t.signature}</span>}
+            {item.special && !item.soldOut && <span className="tag pick">{t.special}</span>}
+            {item.soldOut && <span className="tag out">{t.soldOut}</span>}
           </div>
           {desc && <div className="row-desc">{desc}</div>}
           {photo ? (

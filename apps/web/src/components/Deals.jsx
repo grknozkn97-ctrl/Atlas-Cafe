@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useLang, podgoricaHour, isLive } from '@/lib/store.jsx';
 import { deals } from '@/data/deals.js';
 
@@ -29,8 +29,29 @@ export function DealCard({ deal, live, onOpen }) {
   );
 }
 
-export default function Deals({ onOpen }) {
+function SpecialCard({ item, onOpen }) {
+  const { t, itemName, ingList, tr, money } = useLang();
+  const desc = item.ing?.length ? ingList(item).join(', ') : tr(item.note);
+  return (
+    <button type="button" className="deal special" onClick={() => onOpen(item)}>
+      <div className="deal-img">
+        {item.img && <img src={item.img} alt="" loading="lazy" decoding="async" onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} />}
+        <span className="when special-tag">{t.special}</span>
+      </div>
+      <div className="deal-body">
+        <div className="deal-title">{itemName(item)}</div>
+        {desc && <div className="deal-detail">{desc}</div>}
+        <div className="deal-price"><strong>{money(item.price)}</strong></div>
+      </div>
+    </button>
+  );
+}
+
+export default function Deals({ onOpen, specials = [], onOpenItem }) {
   const { t } = useLang();
+  const railRef = useRef(null);
+  // Today's picks arrive a moment after load; bring the rail back to its start so they are seen.
+  useEffect(() => { if (railRef.current) railRef.current.scrollLeft = 0; }, [specials.length]);
   const hour = podgoricaHour();
   // Deals that fit the time of day come first.
   const ordered = useMemo(() => {
@@ -42,7 +63,8 @@ export default function Deals({ onOpen }) {
   return (
     <section className="deals wrap" aria-label={t.deals}>
       <h2>{t.deals}</h2>
-      <div className="deal-rail">
+      <div className="deal-rail" ref={railRef}>
+        {specials.map((it) => <SpecialCard key={it.id} item={it} onOpen={onOpenItem} />)}
         {ordered.map(([d, live]) => <DealCard key={d.id} deal={d} live={live} onOpen={onOpen} />)}
       </div>
     </section>

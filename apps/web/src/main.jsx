@@ -4,6 +4,7 @@ import '@fontsource/gloock/latin-400.css';
 import '@fontsource/gloock/latin-ext-400.css';
 import '@fontsource-variable/figtree/wght.css';
 import './styles.css';
+import './data/tr.js';
 import App from './App.jsx';
 
 ReactDOM.createRoot(document.getElementById('root')).render(

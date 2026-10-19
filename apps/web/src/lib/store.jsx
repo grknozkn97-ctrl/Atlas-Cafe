@@ -3,6 +3,8 @@ import { LANGS, detectLang, ui, euro } from '@/data/i18n.js';
 import { ingredients } from '@/data/ingredients.js';
 import { extras as extrasData, itemsById } from '@/data/menu.js';
 import { deals } from '@/data/deals.js';
+import { useLive } from '@/lib/live.js';
+import { track } from '@/lib/track.js';
 
 const safeGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const safeSet = (k, v) => { try { localStorage.setItem(k, v); } catch { /* storage off */ } };
@@ -12,7 +14,7 @@ const LangCtx = createContext(null);
 
 export function LangProvider({ children }) {
   const [lang, setLangState] = useState(detectLang);
-  const setLang = useCallback((l) => { setLangState(l); safeSet('atlas-lang', l); }, []);
+  const setLang = useCallback((l) => { setLangState(l); safeSet('atlas-lang', l); track('Language changed', { lang: l }); }, []);
   useEffect(() => {
     const meta = LANGS.find((l) => l.code === lang);
     document.documentElement.lang = meta ? meta.html : 'en';
@@ -33,6 +35,14 @@ export function LangProvider({ children }) {
 }
 export const useLang = () => useContext(LangCtx);
 
+/* ── Live sheet data (prices, not today, today's pick) ── */
+const LiveCtx = createContext(null);
+export function LiveProvider({ children }) {
+  const live = useLive();
+  return <LiveCtx.Provider value={live}>{children}</LiveCtx.Provider>;
+}
+export const useLiveData = () => useContext(LiveCtx);
+
 /* ── My list (what the guest wants to order) ────────── */
 const ListCtx = createContext(null);
 const LIST_KEY = 'atlas-list';
@@ -46,25 +56,29 @@ function loadList() {
   return [];
 }
 
-export function lineInfo(line) {
+export function lineInfo(line, live) {
   if (line.kind === 'deal') {
     const d = deals.find((x) => x.id === line.id);
     return d ? { unit: d.price, deal: d } : null;
   }
-  const item = itemsById[line.id];
-  if (!item) return null;
+  const base = itemsById[line.id];
+  if (!base) return null;
+  const lp = live && live[line.id] && live[line.id].price;
+  const item = lp ? { ...base, price: lp } : base;
   const pool = extrasData[item.extrasKey] || [];
   const chosen = pool.filter((x) => line.extras.includes(x.id));
   return { item, chosen, unit: item.price + chosen.reduce((s, x) => s + x.price, 0) };
 }
 
 export function ListProvider({ children }) {
+  const live = useLiveData();
   const [lines, setLines] = useState(loadList);
   useEffect(() => { safeSet(LIST_KEY, JSON.stringify({ at: Date.now(), lines })); }, [lines]);
 
   const add = useCallback((id, kind = 'item', extras = []) => {
     const ex = [...extras].sort();
     const key = `${kind}:${id}:${ex.join(',')}`;
+    track('Added to list', { id, kind });
     setLines((ls) => {
       const found = ls.find((l) => l.key === key);
       if (found) return ls.map((l) => (l.key === key ? { ...l, qty: l.qty + 1 } : l));
@@ -80,13 +94,13 @@ export function ListProvider({ children }) {
     let count = 0; let total = 0;
     const perItem = {};
     for (const l of lines) {
-      const info = lineInfo(l);
+      const info = lineInfo(l, live);
       if (!info) continue;
       count += l.qty; total += info.unit * l.qty;
       perItem[l.id] = (perItem[l.id] || 0) + l.qty;
     }
-    return { lines, add, change, clear, count, total, perItem };
-  }, [lines, add, change, clear]);
+    return { lines, add, change, clear, count, total, perItem, live };
+  }, [lines, add, change, clear, live]);
   return <ListCtx.Provider value={value}>{children}</ListCtx.Provider>;
 }
 export const useList = () => useContext(ListCtx);

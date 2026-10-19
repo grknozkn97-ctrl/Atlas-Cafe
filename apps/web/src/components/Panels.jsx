@@ -3,6 +3,8 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import Sheet from './Sheet.jsx';
 import { CheckIcon } from './icons.jsx';
 import { RatingLink } from './Top.jsx';
+import { track } from '@/lib/track.js';
+import { MAPS_URL, INSTAGRAM_URL, hours } from '@/data/business.js';
 import { useLang, useList, lineInfo } from '@/lib/store.jsx';
 import { LANGS } from '@/data/i18n.js';
 import { allergens, filterAllergens } from '@/data/ingredients.js';
@@ -81,13 +83,13 @@ function lineLabel(line, info, tr, itemName) {
 }
 
 export function ListSheet({ open, onClose }) {
-  const { lines, change, clear, total } = useList();
+  const { lines, change, clear, total, live } = useList();
   const { t, tr, itemName, money } = useLang();
   const [waiter, setWaiter] = useState(false);
   useEffect(() => { if (!open) setWaiter(false); }, [open]);
 
   const footer = lines.length > 0 && (
-    <button type="button" className="cta" onClick={() => setWaiter(true)}>{t.showWaiter}</button>
+    <button type="button" className="cta" onClick={() => { track('Shown to waiter', { items: lines.length }); setWaiter(true); }}>{t.showWaiter}</button>
   );
 
   return (
@@ -98,7 +100,7 @@ export function ListSheet({ open, onClose }) {
           <p className="help">{lines.length ? t.listHelp : t.emptyList}</p>
           <ul className="lines">
             {lines.map((l) => {
-              const info = lineInfo(l);
+              const info = lineInfo(l, live);
               if (!info) return null;
               const { name, sub } = lineLabel(l, info, tr, itemName);
               return (
@@ -133,7 +135,7 @@ export function ListSheet({ open, onClose }) {
 // Large, plain list the guest turns towards the waiter. Dish names are in
 // English, the way the till knows them, with the guest's language underneath.
 function WaiterView({ onBack }) {
-  const { lines, total } = useList();
+  const { lines, total, live } = useList();
   const { t, tr, itemName, money, lang } = useLang();
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -145,7 +147,7 @@ function WaiterView({ onBack }) {
       <button type="button" className="cta ghost" style={{ width: 'auto', padding: '0 18px' }} onClick={onBack}>← {t.back}</button>
       <h2>{t.waiterTitle}</h2>
       {lines.map((l) => {
-        const info = lineInfo(l);
+        const info = lineInfo(l, live);
         if (!info) return null;
         const en = l.kind === 'deal' ? info.deal.title.en : info.item.name;
         const local = l.kind === 'deal' ? tr(info.deal.title) : itemName(info.item);
@@ -167,7 +169,13 @@ function WaiterView({ onBack }) {
 }
 
 export function Footer() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const meta = LANGS.find((l) => l.code === lang);
+  const fmt = (day) => {
+    try { return new Intl.DateTimeFormat(meta?.html || 'en', { weekday: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(2026, 0, 4 + day))); } catch { return String(day); }
+  };
+  const todayIdx = new Date().getDay();
+  const order = [1, 2, 3, 4, 5, 6, 0];
   return (
     <footer className="foot">
       <div className="wrap">
@@ -176,9 +184,17 @@ export function Footer() {
           Hercegovačka 7, 81000 Podgorica<br />
           <a href="tel:+38267036687">+382 67 036 687</a> · <a href="mailto:info@cafeatlas.me">info@cafeatlas.me</a>
         </address>
+        <ul className="hours" aria-label={t.hoursTitle}>
+          {order.map((d) => (
+            <React.Fragment key={d}>
+              <li className={d === todayIdx ? 'today' : ''} style={{ textTransform: 'capitalize' }}>{fmt(d)}</li>
+              <li className={d === todayIdx ? 'today' : ''}>{hours[d] ? `${String(hours[d][0]).padStart(2, '0')}:00–${hours[d][1]}:00` : t.closed}</li>
+            </React.Fragment>
+          ))}
+        </ul>
         <div className="foot-links">
-          <a href="https://maps.google.com/?q=Cafe+Atlas+Hercegova%C4%8Dka+7+Podgorica" target="_blank" rel="noopener noreferrer">Google Maps</a>
-          <a href="https://www.instagram.com/atlascafefoodbar/" target="_blank" rel="noopener noreferrer">{t.follow}</a>
+          <a href={MAPS_URL} target="_blank" rel="noopener noreferrer">Google Maps</a>
+          <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer">{t.follow}</a>
           <a href="tel:+38267036687">{t.call}</a>
         </div>
         <RatingLink />

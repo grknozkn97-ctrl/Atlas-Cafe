@@ -13,7 +13,7 @@ export const deals = [
     detail: T('Cheese toast with fries and a black tea', 'Tost sa sirom i pomfritom uz crni čaj', 'Toast al formaggio con patatine e un tè nero', 'Croque au fromage avec frites et un thé noir'),
     price: 4.0,
     regular: 5.5,
-    from: 7, to: 12,
+    from: 9, to: 12,
     img: CDN + '8f7d7fe256589569a8abb7d8eec9b715.png',
   },
   {
@@ -32,7 +32,7 @@ export const deals = [
     detail: T('A big portion of fries and two 0.33 l Nikšićko', 'Velika porcija pomfrita i dva Nikšićka 0,33 l', 'Una porzione grande di patatine e due Nikšićko da 0,33 l', 'Une grande portion de frites et deux Nikšićko 33 cl'),
     price: 6.0,
     regular: 9.0,
-    from: 16, to: 24,
+    from: 16, to: 21,
     img: CDN + '57461599610c22066d7d59b1ade9d029.png',
   },
   {
@@ -41,7 +41,7 @@ export const deals = [
     detail: T('Dinner for two: any two pastas and two red wines', 'Večera za dvoje: dvije paste po izboru i dva crna vina', 'Cena per due: due paste a scelta e due vini rossi', 'Dîner pour deux : deux pâtes au choix et deux vins rouges'),
     price: 15.0,
     regular: null,
-    from: 18, to: 24,
+    from: 18, to: 21,
     img: CDN + '4ba4d8effa966d7c6fe4743afb4ab281.png',
   },
 ];

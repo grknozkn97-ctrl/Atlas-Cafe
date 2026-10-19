@@ -58,7 +58,9 @@ export default function ProductSheet({ item, onClose, onDeal }) {
   const inList = item ? perItem[item.id] || 0 : 0;
 
   let i = 0;
-  const footer = item && (
+  const footer = item && (item.soldOut ? (
+    <button type="button" className="cta" disabled style={{ background: 'var(--line)', color: 'var(--muted)' }}>{t.soldOut}</button>
+  ) : (
     <button
       type="button"
       className="cta"
@@ -68,7 +70,7 @@ export default function ProductSheet({ item, onClose, onDeal }) {
       {justAdded ? t.inList(inList) : t.addToList}
       <span className="amt">· {money(unit)}</span>
     </button>
-  );
+  ));
 
   return (
     <Sheet open={!!item} onClose={onClose} footer={footer} label={item ? itemName(item) : ''} closeStyle={item?.img ? 'dark' : 'light'}>
@@ -96,6 +98,8 @@ export default function ProductSheet({ item, onClose, onDeal }) {
                 {item.kcal > 0 && <span className="fact">{item.kcal} {t.kcal}</span>}
                 {item.spicy && <span className="tag hot">{t.spicy}</span>}
                 {item.signature && <span className="tag">{t.signature}</span>}
+                {item.special && !item.soldOut && <span className="tag pick">{t.special}</span>}
+                {item.soldOut && <span className="tag out">{t.soldOut}</span>}
               </div>
             </Reveal>
 
@@ -192,7 +196,7 @@ export function DealSheet({ deal, onClose }) {
             <Reveal i={1}>
               <div className="block">
                 <p className="note-text">{tr(deal.detail)}</p>
-                <p className="allergen-note" style={{ marginTop: 10 }}><InfoIcon />{String(deal.from).padStart(2, '0')}:00–{deal.to === 24 ? '24' : String(deal.to).padStart(2, '0')}:00</p>
+                <p className="allergen-note" style={{ marginTop: 10 }}><InfoIcon />{String(deal.from).padStart(2, '0')}:00–{String(deal.to).padStart(2, '0')}:00</p>
               </div>
             </Reveal>
           </div>

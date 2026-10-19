@@ -3,8 +3,8 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useLang } from '@/lib/store.jsx';
 import { CloseIcon } from './icons.jsx';
 
-const INSTAGRAM = 'https://www.instagram.com/atlascafefoodbar/';
-const GOOGLE = 'https://share.google/gx9QBu5N87yWGipUd';
+import { INSTAGRAM_URL as INSTAGRAM, REVIEW_URL as GOOGLE } from '@/data/business.js';
+import { track } from '@/lib/track.js';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const get = (s, k) => { try { return s.getItem(k); } catch { return null; } };
@@ -108,7 +108,7 @@ export default function Mascot({ suppressed }) {
           >
             <button type="button" className="x" onClick={quiet} aria-label={t.close}><CloseIcon /></button>
             <p>{kind === 'google' ? t.mascotGoogle : t.mascotInsta}</p>
-            <a className={`go ${kind === 'insta' ? 'insta' : ''}`} href={href} target="_blank" rel="noopener noreferrer" onClick={() => setPhase('peek')}>
+            <a className={`go ${kind === 'insta' ? 'insta' : ''}`} href={href} target="_blank" rel="noopener noreferrer" onClick={() => { track('Mascot link', { kind }); setPhase('peek'); }}>
               {kind === 'google' ? `★ ${t.mascotGoogleCta}` : t.mascotInstaCta}
             </a>
             <button type="button" className="later" onClick={quiet}>{t.notNow}</button>

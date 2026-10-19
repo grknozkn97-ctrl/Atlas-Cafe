@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLang } from '@/lib/store.jsx';
 import { LANGS } from '@/data/i18n.js';
+import { MAPS_URL, REVIEW_URL, openState, rating } from '@/data/business.js';
 import { CloseIcon, FilterIcon, GlobeIcon, SearchIcon, Star } from './icons.jsx';
 
 export default function Top({ query, setQuery, onLang, onFilter, hiddenAllergens, hiddenCount, clearFilter }) {
@@ -22,6 +23,8 @@ export default function Top({ query, setQuery, onLang, onFilter, hiddenAllergens
           <GlobeIcon /> {short}
         </button>
       </div>
+
+      <StatusRow />
 
       <div className="tools">
         <label className="search">
@@ -56,10 +59,39 @@ export default function Top({ query, setQuery, onLang, onFilter, hiddenAllergens
   );
 }
 
-export function RatingLink() {
+function dayName(day, lang) {
+  const meta = LANGS.find((l) => l.code === lang);
+  const d = new Date(Date.UTC(2026, 0, 4 + day)); // 4 Jan 2026 was a Sunday
+  try { return new Intl.DateTimeFormat(meta?.html || 'en', { weekday: 'long', timeZone: 'UTC' }).format(d); } catch { return ''; }
+}
+
+export function openLabel(t, lang, st = openState()) {
+  if (st.open) return t.openUntil(st.until);
+  if (st.opensAt == null) return t.closed;
+  if (st.today) return t.opensAt(st.opensAt);
+  if (st.tomorrow) return t.opensTomorrow(st.opensAt);
+  return t.opensOn(dayName(st.opensDay, lang), st.opensAt);
+}
+
+function StatusRow() {
+  const { t, lang } = useLang();
+  const st = openState();
+  const score = new Intl.NumberFormat(LANGS.find((l) => l.code === lang)?.html || 'en', { minimumFractionDigits: 1 }).format(rating.score);
   return (
-    <a className="rating" href="https://share.google/gx9QBu5N87yWGipUd" target="_blank" rel="noopener noreferrer">
-      <Star /> 4.9 Google
+    <div className="status-row">
+      <span className="open-state" data-open={st.open}>{openLabel(t, lang, st)}</span>
+      <a className="stars" href={MAPS_URL} target="_blank" rel="noopener noreferrer">
+        <Star /> {score} <span>· {t.reviews(rating.count)}</span>
+      </a>
+    </div>
+  );
+}
+
+export function RatingLink() {
+  const { t } = useLang();
+  return (
+    <a className="rating" href={REVIEW_URL} target="_blank" rel="noopener noreferrer">
+      <Star /> {t.rate}
     </a>
   );
 }
