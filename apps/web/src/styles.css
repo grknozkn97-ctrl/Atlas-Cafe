@@ -362,3 +362,54 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .filter-btn .label { display: none; }
   .brand-name { font-size: 22px; }
 }
+
+/* ── Phone layout: get guests to the menu faster ───────────────────── */
+@media (max-width: 639px) {
+  .brand img { width: 32px; height: 52px; }
+  .brand-name { font-size: 22px; }
+  .brand-sub { font-size: 12.5px; margin-top: 3px; }
+  .tools { margin-top: 10px; }
+  .search, .filter-btn { height: 44px; }
+
+  /* Deals become compact cards: photo on the left, text on the right. */
+  .deals { margin-top: 16px; }
+  .deals h2 { font-size: 19px; margin-bottom: 8px; }
+  .deal { flex-basis: 84%; display: flex; align-items: stretch; min-height: 112px; }
+  .deal-img { aspect-ratio: auto; width: 104px; flex: none; }
+  .deal-body { padding: 10px 12px; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+  .deal-title { font-size: 17px; padding-right: 0; }
+  .deal-detail { font-size: 12.5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .deal-price { margin-top: 6px; }
+  .deal-price strong { font-size: 17px; }
+  .when { top: 6px; left: 6px; font-size: 10.5px; padding: 3px 7px; }
+  .when[data-live='true']::before { width: 6px; height: 6px; margin-right: 4px; }
+  .stamp { width: 52px; height: 52px; right: auto; left: 6px; bottom: 6px; font-size: 10px; padding: 4px; box-shadow: 0 0 0 2px var(--card), 0 0 0 3.5px var(--brass); }
+  .stamp b { font-size: 11px; }
+
+  /* Slimmer sticky navigation. */
+  .tabs { gap: 18px; padding-top: 6px; }
+  .tab { font-size: 18px; padding: 4px 0 8px; }
+  .chips { padding: 2px 0 9px; gap: 6px; }
+  .chip { height: 32px; padding: 0 12px; font-size: 13.5px; }
+
+  .section { padding-top: 18px; }
+  .section-title { font-size: 28px; }
+  .group { padding-top: 12px; }
+  .group-title { font-size: 20px; }
+  .row { padding: 12px 0; gap: 12px; }
+  .row-name { font-size: 16px; }
+  .row-desc { font-size: 13.5px; }
+  .row-thumb { width: 84px; height: 84px; border-radius: 12px; }
+
+  /* Product card: photo shorter so the name and price show without scrolling. */
+  .sheet-photo { max-height: 34vh; }
+  .sheet-body { padding: 16px 18px 6px; }
+  .sheet-name { font-size: 26px; }
+  .sheet-close { width: 34px; height: 34px; top: 10px; right: 10px; }
+  .block { padding-top: 14px; margin-top: 14px; }
+  .sheet-foot { padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); }
+  .cta { height: 50px; font-size: 16px; }
+
+  .listbar { height: 48px; left: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); }
+  .listbar .n { min-width: 32px; height: 32px; }
+}
