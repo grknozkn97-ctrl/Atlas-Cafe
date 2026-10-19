@@ -66,9 +66,9 @@ export const sections = [
         items: [
           { id: 'b1', name: 'Fast Breakfast', names: T(null, 'Brzi doručak', 'Colazione veloce', 'Petit-déjeuner express'), size: '450 g', price: 7.0, img: img('36f492d9ae1187852e4e25e4f498ad0f.jpg'),
             ing: ['1:boiledEgg', '2:borekRoll', 'gouda', 'whiteCheese', 'olives', 'lettuce', 'tomato', 'cucumber', 'ajvar', 'honey', 'butter', 'bread'], al: [1, 3, 7], kcal: 902 },
-          { id: 'b7', name: 'Cheese Börek Rolls', names: T(null, 'Rolnice od bureka sa sirom', 'Rotolini di börek al formaggio', 'Roulés de börek au fromage'), size: '450 g', price: 5.0, img: img('8650dde00739c140313f17a0e7d336bb.png'),
+          { id: 'b7', name: 'Cheese Börek Rolls', names: T(null, 'Rolnice od bureka sa sirom', 'Rotolini di börek al formaggio', 'Roulés de börek au fromage'), size: '450 g', price: 5.5, img: img('8650dde00739c140313f17a0e7d336bb.png'),
             ing: ['10:borekRoll', 'tomato', 'cucumber', 'ajvar', 'honey', 'butter'], al: [1, 3, 7], kcal: 1114 },
-          { id: 'b9', name: 'Priganice Plate', names: T(null, 'Priganice', 'Piatto di priganice', 'Assiette de priganice'), size: '450 g', price: 5.0, img: img('47579aa3227067c69e4bbaf62b339b97.png'),
+          { id: 'b9', name: 'Priganice Plate', names: T(null, 'Priganice', 'Piatto di priganice', 'Assiette de priganice'), size: '450 g', price: 5.5, img: img('47579aa3227067c69e4bbaf62b339b97.png'),
             ing: ['10:priganice', 'cheese', 'honey', 'butter', 'jam'], al: [1, 3, 7], kcal: 1482 },
           { id: 'b2', name: 'Menemen', size: '250 g', price: 5.0, img: img('06a4888c757b627471b3c9bd739724dc.jpg'),
             ing: ['2:eggs', 'tomato', 'greenPepper', 'bread'], al: [1, 3], kcal: 325,
@@ -201,7 +201,7 @@ export const sections = [
       {
         id: 'wrap', title: T('Wraps', 'Rolovani sendviči', 'Piadine', 'Wraps'),
         items: [
-          { id: 'wr1', name: 'Crispy Chicken Wrap', names: T(null, 'Rol s hrskavom piletinom', 'Wrap di pollo croccante', 'Wrap au poulet croustillant'), size: '300 g', price: 6.0, img: img('ab4ba18acf7d203d8eb5e28377284beb.png'),
+          { id: 'wr1', name: 'Crispy Chicken Wrap', names: T(null, 'Rol s hrskavom piletinom', 'Wrap di pollo croccante', 'Wrap au poulet croustillant'), size: '300 g', price: 6.5, img: img('ab4ba18acf7d203d8eb5e28377284beb.png'),
             ing: ['crispyChicken', 'lettuce', 'burgerSauce', 'pickles', 'caramelOnion', 'cheddar', 'ketchup', 'mayo', 'fries'], al: [1, 3, 7, 10], kcal: 881 },
           { id: 'wr2', name: 'Chicken Wrap', names: T(null, 'Rol s piletinom', 'Wrap di pollo', 'Wrap au poulet'), size: '350 g', price: 6.5, img: img('c66d0cbc2a2c023bfd2d1a869d3d4ae3.png'),
             ing: ['chickenFillet', 'lettuce', 'peppers', 'tomato', 'onion', 'gouda', 'greenPepper', 'ketchup', 'mayo', 'fries'], al: [1, 3, 7, 10], kcal: 770 },
@@ -238,7 +238,7 @@ export const sections = [
           { id: 'ccf6', name: 'Iced Flat White', price: 3.5, ing: ['doubleEspresso', 'milk', 'ice'], al: [7], kcal: 92 },
           { id: 'ccf5', name: 'Iced Mocha', price: 3.2, ing: ['espresso', 'milk', 'chocSyrup', 'ice'], al: [6, 7], kcal: 161 },
           { id: 'ccf2', name: 'Iced White Mocha', price: 3.2, ing: ['espresso', 'milk', 'whiteChocSyrup', 'ice'], al: [7], kcal: 173 },
-          { id: 'ccf3', name: 'Iced Caramel Latte', price: 5.5, ing: ['espresso', 'milk', 'caramelSyrup', 'ice'], al: [7], kcal: 184 },
+          { id: 'ccf3', name: 'Iced Caramel Latte', price: 3.5, ing: ['espresso', 'milk', 'caramelSyrup', 'ice'], al: [7], kcal: 184 },
           { id: 'ccf12', name: 'Orange Espresso', names: T(null, 'Espreso s narandžom', 'Espresso all’arancia', 'Espresso à l’orange'), price: 4.0, ing: ['espresso', 'freshOrange', 'ice'], al: [], kcal: 69 },
           { id: 'ccf13', name: 'Espresso Tonic', names: T(null, 'Espreso tonik', 'Espresso tonic', 'Espresso tonic'), price: 3.5, ing: ['espresso', 'tonic', 'ice'], al: [], kcal: 52 },
         ],
@@ -257,7 +257,7 @@ export const sections = [
         id: 'soft-drinks', title: T('Soft drinks', 'Bezalkoholna pića', 'Bibite', 'Boissons fraîches'),
         items: [
           { id: 'sd7', name: 'Fresh Orange Juice', names: T(null, 'Ceđena pomorandža', 'Spremuta d’arancia', 'Jus d’orange pressé'), price: 4.0, ing: ['freshOrange'], al: [], kcal: 112 },
-          { id: 'sd6', name: 'Churchill', price: 2.5, ing: ['freshLemon', 'sparkling'], al: [], kcal: 9 },
+          { id: 'sd6', name: 'Churchill', price: 2.0, ing: ['freshLemon', 'sparkling'], al: [], kcal: 9 },
           { id: 'sd1', name: 'Coca-Cola', price: 2.5, al: [] },
           { id: 'sd2', name: 'Coca-Cola Zero', price: 2.5, al: [] },
           { id: 'sd3', name: 'Fanta', price: 2.5, al: [] },
@@ -300,7 +300,7 @@ export const sections = [
           { id: 'ck2', name: 'Aperol Spritz', price: 5.0, ing: ['aperol', 'prosecco', 'sparkling'], al: [12], kcal: 162 },
           { id: 'ck3', name: 'Campari Spritz', price: 5.0, ing: ['campari', 'prosecco', 'sparkling'], al: [12], kcal: 210 },
           { id: 'ck1', name: 'Espresso Martini', price: 5.5, ing: ['vodka', 'coffeeLiqueur', 'espresso', 'syrup'], al: [], kcal: 185 },
-          { id: 'ck4', name: 'Negroni', price: 5.5, ing: ['gin', 'campari', 'vermouth'], al: [12], kcal: 183 },
+          { id: 'ck4', name: 'Negroni', price: 6.5, ing: ['gin', 'campari', 'vermouth'], al: [12], kcal: 183 },
           { id: 'ck5', name: 'Gin & Tonic', names: T(null, 'Džin tonik', 'Gin tonic', 'Gin tonic'), price: 4.0, ing: ['gin', 'tonic'], al: [], kcal: 166 },
           { id: 'ck12', name: 'Mojito', price: 5.0, ing: ['whiteRum', 'limeJuice', 'syrup', 'mint', 'sparkling'], al: [], kcal: 174 },
           { id: 'ck14', name: 'Cucumber Gin Fizz', price: 5.0, ing: ['gin', 'limeJuice', 'syrup', 'cucumber', 'mint', 'sparkling'], al: [], kcal: 164 },
