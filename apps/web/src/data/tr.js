@@ -61,6 +61,7 @@ const names = {
   sl1: 'Karışık Salata', sl2: 'Tavuklu Salata', sl3: 'Çıtır Tavuklu Salata', sl4: 'Ton Balıklı Salata',
   hm1: 'Klasik Burger', hm3: 'Şefin Burgeri', pz2: 'Karışık', pz3: 'Barbekü Tavuk',
   wr1: 'Çıtır Tavuk Dürüm', wr2: 'Tavuk Dürüm', cf11: 'Double Espresso', cf9: 'Kuvana Kafa (Türk usulü)',
+  ccf12: 'Portakallı Espresso', ccf13: 'Espresso Tonik',
   hd1: 'Siyah Çay', hd2: 'Bitki Çayı', hd4: 'Sıcak Çikolata', hd5: 'Beyaz Sıcak Çikolata',
   sd7: 'Taze Portakal Suyu', sd8: 'Su', sd9: 'Maden Suyu',
   fz1: 'Karpuz Frozen', fz5: 'Kavun Frozen', fz2: 'Çilek Frozen', fz3: 'Ananas Frozen', fz4: 'Karadut Frozen',

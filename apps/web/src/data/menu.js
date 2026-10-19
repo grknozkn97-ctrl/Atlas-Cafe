@@ -239,6 +239,8 @@ export const sections = [
           { id: 'ccf5', name: 'Iced Mocha', price: 3.2, ing: ['espresso', 'milk', 'chocSyrup', 'ice'], al: [6, 7], kcal: 161 },
           { id: 'ccf2', name: 'Iced White Mocha', price: 3.2, ing: ['espresso', 'milk', 'whiteChocSyrup', 'ice'], al: [7], kcal: 173 },
           { id: 'ccf3', name: 'Iced Caramel Latte', price: 5.5, ing: ['espresso', 'milk', 'caramelSyrup', 'ice'], al: [7], kcal: 184 },
+          { id: 'ccf12', name: 'Orange Espresso', names: T(null, 'Espreso s narandžom', 'Espresso all’arancia', 'Espresso à l’orange'), price: 4.0, ing: ['espresso', 'freshOrange', 'ice'], al: [], kcal: 69 },
+          { id: 'ccf13', name: 'Espresso Tonic', names: T(null, 'Espreso tonik', 'Espresso tonic', 'Espresso tonic'), price: 3.5, ing: ['espresso', 'tonic', 'ice'], al: [], kcal: 52 },
         ],
       },
       {
