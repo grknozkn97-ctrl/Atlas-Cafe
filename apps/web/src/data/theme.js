@@ -2,7 +2,7 @@
 // A season switches itself on and off by date (Podgorica time), so nobody has
 // to remember to change it back. ?theme=classic or ?theme=halloween forces one.
 export const SEASONS = [
-  { id: 'halloween', from: '2026-10-20', to: '2026-11-15' }, // last day included
+  { id: 'halloween', from: '2026-10-19', to: '2026-11-15' }, // last day included
 ];
 
 function podgoricaDate() {
