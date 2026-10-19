@@ -41,14 +41,14 @@ export function featureFirst(sections) {
 }
 
 export const hui = {
-  en: { featuredTag: 'Halloween special', bannerTitle: 'Halloween at Atlas', bannerText: 'Until 1 November our Halloween specials wear an orange frame. Look for the pumpkins.', pickTag: 'Halloween pick', picksTitle: 'Halloween picks',
+  en: { featuredTag: 'Halloween special', bannerTitle: 'Halloween at Atlas', bannerText: 'Until 15 November our Halloween specials wear an orange frame. Look for the pumpkins.', pickTag: 'Halloween pick', picksTitle: 'Halloween picks',
     mascotInsta: 'Boo! Our Halloween specials go up on Instagram first.', mascotGoogle: 'Survived the night? Thirty seconds on Google helps a small café a lot.' },
-  me: { featuredTag: 'Halloween specijal', bannerTitle: 'Halloween u Atlasu', bannerText: 'Do 1. novembra naši Halloween specijaliteti su u narandžastom okviru. Tražite bundeve.', pickTag: 'Halloween izbor', picksTitle: 'Halloween izbor',
+  me: { featuredTag: 'Halloween specijal', bannerTitle: 'Halloween u Atlasu', bannerText: 'Do 15. novembra naši Halloween specijaliteti su u narandžastom okviru. Tražite bundeve.', pickTag: 'Halloween izbor', picksTitle: 'Halloween izbor',
     mascotInsta: 'Bu! Halloween specijalitete prvo objavljujemo na Instagramu.', mascotGoogle: 'Preživjeli ste noć? Trideset sekundi na Googlu mnogo znači malom kafiću.' },
-  it: { featuredTag: 'Speciale Halloween', bannerTitle: 'Halloween all’Atlas', bannerText: 'Fino al 1° novembre le specialità di Halloween hanno la cornice arancione. Cerca le zucche.', pickTag: 'Scelta di Halloween', picksTitle: 'Scelte di Halloween',
+  it: { featuredTag: 'Speciale Halloween', bannerTitle: 'Halloween all’Atlas', bannerText: 'Fino al 15 novembre le specialità di Halloween hanno la cornice arancione. Cerca le zucche.', pickTag: 'Scelta di Halloween', picksTitle: 'Scelte di Halloween',
     mascotInsta: 'Bu! Le specialità di Halloween escono prima su Instagram.', mascotGoogle: 'Sopravvissuti alla notte? Trenta secondi su Google aiutano tanto un piccolo caffè.' },
-  fr: { featuredTag: 'Spécial Halloween', bannerTitle: 'Halloween chez Atlas', bannerText: 'Jusqu’au 1er novembre, nos spécialités d’Halloween ont un cadre orange. Cherchez les citrouilles.', pickTag: 'Choix d’Halloween', picksTitle: 'Les choix d’Halloween',
+  fr: { featuredTag: 'Spécial Halloween', bannerTitle: 'Halloween chez Atlas', bannerText: 'Jusqu’au 15 novembre, nos spécialités d’Halloween ont un cadre orange. Cherchez les citrouilles.', pickTag: 'Choix d’Halloween', picksTitle: 'Les choix d’Halloween',
     mascotInsta: 'Bouh ! Nos spécialités d’Halloween paraissent d’abord sur Instagram.', mascotGoogle: 'Vous avez survécu à la nuit ? Trente secondes sur Google aident beaucoup un petit café.' },
-  tr: { featuredTag: 'Halloween özel', bannerTitle: 'Atlas’ta Halloween', bannerText: '1 Kasım’a kadar Halloween özel lezzetlerimiz turuncu çerçevede. Balkabaklarını takip et.', pickTag: 'Halloween seçkisi', picksTitle: 'Halloween seçkisi',
+  tr: { featuredTag: 'Halloween özel', bannerTitle: 'Atlas’ta Halloween', bannerText: '15 Kasım’a kadar Halloween özel lezzetlerimiz turuncu çerçevede. Balkabaklarını takip et.', pickTag: 'Halloween seçkisi', picksTitle: 'Halloween seçkisi',
     mascotInsta: 'Bö! Halloween lezzetlerini önce Instagram’da paylaşıyoruz.', mascotGoogle: 'Geceyi atlattın mı? Google’da otuz saniye küçük bir kafeye çok şey katar.' },
 };
