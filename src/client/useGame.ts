@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ClientMessage, CountryState, CountrySummary, ElectionResult, PlayerView, ServerMessage } from '../shared/types';
+import type { ClientMessage, CountryState, CountrySummary, ElectionResult, LocalElectionResult, PlayerView, ServerMessage } from '../shared/types';
 
 const TOKEN_KEY = 'devlet.token';
 
@@ -33,6 +33,7 @@ export interface GameState {
   error: string | null;
   notice: string | null;
   electionNight: { countryName: string; result: ElectionResult } | null;
+  localNight: { countryName: string; result: LocalElectionResult } | null;
   /** Tek oyunculu deneme modu (tarayıcıda simülasyon) */
   offline?: boolean;
   /** Deneme modunda oyun hızı; 0 = durdurulmuş */
@@ -52,6 +53,7 @@ const initial: GameState = {
   error: null,
   notice: null,
   electionNight: null,
+  localNight: null,
 };
 
 export function useGame() {
@@ -112,7 +114,7 @@ export function useGame() {
     [rawSend],
   );
 
-  const clearElection = useCallback(() => setState((s) => ({ ...s, electionNight: null })), []);
+  const clearElection = useCallback(() => setState((s) => ({ ...s, electionNight: null, localNight: null })), []);
   const clearError = useCallback(() => setState((s) => ({ ...s, error: null, notice: null })), []);
   const logout = useCallback(() => {
     writeToken(null);
@@ -149,5 +151,7 @@ function reduce(s: GameState, msg: ServerMessage): GameState {
       return { ...s, notice: msg.message };
     case 'electionNight':
       return { ...s, electionNight: { countryName: msg.countryName, result: msg.result } };
+    case 'localElectionNight':
+      return { ...s, localNight: { countryName: msg.countryName, result: msg.result } };
   }
 }

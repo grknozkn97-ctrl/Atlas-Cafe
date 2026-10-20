@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { handleAction } from './actions';
 import { dispatch } from './dispatch';
 import { createRng } from './ministers';
+import { stepProvinces } from './local';
 import {
   inflationTarget,
   raiseMinWage,
@@ -107,22 +108,97 @@ test('başlangıçta anketler ve meclis toplamı %100 eder', () => {
   assert.ok(Math.abs(sum(c.parties.map((p) => p.support)) - 100) < 1, 'anketler toplamı 100 civarı kalmalı');
 });
 
-test('oyuncu muhalefet partisine katılır ama hükümet kararları veremez', () => {
+test('oyuncu partiye üye olarak girer, güven kazanmadan genel başkan olamaz', () => {
   const world = createWorld(createRng(3));
   const player = newPlayer(world);
   const c = world.countries.tr;
   const rng = createRng(4);
-  assert.throws(() => dispatch(world, player, { type: 'joinParty', countryId: 'tr', partyId: c.rulingPartyId }, rng), /İktidar/);
   const chp = c.parties.find((p) => p.short === 'CHP')!;
+  // İdeolojisi çok uzak partiye kabul edilmez.
+  assert.throws(() => dispatch(world, player, { type: 'joinParty', countryId: 'tr', partyId: c.parties.find((p) => p.short === 'Zafer')!.id }, rng), /uzak/);
   dispatch(world, player, { type: 'joinParty', countryId: 'tr', partyId: chp.id }, rng);
-  assert.equal(chp.playerId, 'p1');
-  assert.equal(player.countryId, 'tr');
+  assert.equal(chp.playerId, null, 'üye olmak genel başkanlık değildir');
+  assert.ok(player.membership && player.membership.trust < 60);
+  assert.throws(() => dispatch(world, player, { type: 'partyAction', action: 'teskilat' }, rng), /genel başkan/);
+  assert.throws(() => dispatch(world, player, { type: 'challengeLeader' }, rng), /güveni en az/);
   assert.throws(() => dispatch(world, player, { type: 'setBudget', budget: { saglik: 9 } }, rng), /seçim kazan/);
-  const funds = chp.funds;
-  const region = c.regions[0];
-  dispatch(world, player, { type: 'partyAction', action: 'miting', regionId: region.id }, rng);
-  assert.ok(chp.funds < funds && chp.momentum > 0);
-  assert.throws(() => dispatch(world, player, { type: 'partyAction', action: 'miting', regionId: region.id }, rng), /beklemelisin/);
+  // Saha çalışması güveni artırır, bekleme süresi vardır.
+  const t0 = player.membership!.trust;
+  dispatch(world, player, { type: 'media', action: 'sahaCalismasi' }, rng);
+  assert.ok(player.membership!.trust > t0);
+  assert.throws(() => dispatch(world, player, { type: 'media', action: 'sahaCalismasi' }, rng), /beklemelisin/);
+  // Güven yüksekse kurultaya gidebilir; kazanırsa genel başkan olur.
+  player.membership!.trust = 100;
+  player.fame = 100;
+  let won = false;
+  for (let i = 0; i < 20 && !won; i++) {
+    player.cooldowns = {};
+    player.membership!.trust = 100;
+    dispatch(world, player, { type: 'challengeLeader' }, createRng(100 + i));
+    won = chp.playerId === 'p1';
+  }
+  assert.ok(won, 'yüksek güvenle kurultay kazanılabilmeli');
+  assert.equal(player.partyId, chp.id);
+  // Partiden ayrılıp başka partiye geçebilir.
+  dispatch(world, player, { type: 'leaveParty' }, rng);
+  assert.equal(chp.playerId, null);
+  assert.equal(player.membership, null);
+  dispatch(world, player, { type: 'joinParty', countryId: 'tr', partyId: c.parties.find((p) => p.short === 'DEM')!.id }, rng);
+  assert.ok(player.membership);
+});
+
+test('belediye seçimini kazanan oyuncu partisi o ili yönetir; şehir iyi yönetilirse büyür', () => {
+  const world = createWorld(createRng(8));
+  const player = newPlayer(world);
+  const c = world.countries.tr;
+  assert.equal(c.provinces.length, 81);
+  const ist = c.provinces.find((p) => p.name === 'İstanbul')!;
+  assert.equal(c.parties.find((p) => p.id === ist.mayor.partyId)?.short, 'CHP');
+  const rng = createRng(9);
+  dispatch(world, player, { type: 'foundParty', countryId: 'tr', name: 'Şehir Partisi', short: 'ŞP', color: '#2a9d8f', ideology: { economic: -0.2, social: -0.3 } }, rng);
+  const party = c.parties.find((p) => p.playerId === 'p1')!;
+  const pv = c.provinces.find((p) => p.name === 'Eskişehir')!;
+  assert.throws(() => dispatch(world, player, { type: 'municipal', provinceId: pv.id, propertyTax: 'dusuk' }, rng), /yönetmek/);
+  party.funds = 50;
+  dispatch(world, player, { type: 'nominateMayor', provinceId: pv.id, candidateId: pv.pool[0].id }, rng);
+  assert.ok(pv.nominees[party.id]);
+  party.support = 60;
+  party.appeal = 300;
+  c.nextLocalElectionDay = world.day + 1;
+  tickWorld(world, createRng(10));
+  assert.equal(pv.mayor.partyId, party.id, 'güçlü parti ili kazanmalı');
+  assert.ok(c.lastLocalElection);
+  // Şimdi ili yönetebilir.
+  dispatch(world, player, { type: 'municipal', provinceId: pv.id, alloc: { konut: 40, ulasim: 20, sosyal: 25, cevre: 15 } }, rng);
+  pv.funds = 1e6;
+  dispatch(world, player, { type: 'municipal', provinceId: pv.id, project: 'sanayi' }, rng);
+  assert.equal(pv.projects.length, 1);
+
+  // Aynı başlangıçtan iki şehir: iyi yönetilen büyür, kötü yönetilen küçülür.
+  const good = structuredClone(pv);
+  const bad = structuredClone(pv);
+  good.mayor.competence = 0.95;
+  good.built.sanayi = 3;
+  good.built.park = 3;
+  bad.mayor.competence = 0.05;
+  bad.alloc = { konut: 0, ulasim: 0, sosyal: 0, cevre: 100 };
+  bad.houses = Math.round(bad.houses * 0.8);
+  // İki il aynı ülkede yarışır: göç kötü yönetilenden iyi yönetilene akar.
+  const cc = structuredClone(c);
+  cc.provinces = [good, bad];
+  for (let m = 1; m <= 60; m++) stepProvinces(cc, world.day + m * 30, createRng(m));
+  const [g, b] = cc.provinces;
+  assert.ok(g.pop > pv.pop, `iyi yönetim nüfusu artırmalı (${g.pop} > ${pv.pop})`);
+  assert.ok(b.pop < pv.pop, `kötü yönetim nüfusu azaltmalı (${b.pop} < ${pv.pop})`);
+  assert.ok(g.houses > pv.houses);
+});
+
+test('otoriter ülkede yerel seçim yoktur, valiler atanır', () => {
+  const world = createWorld(createRng(12));
+  const ru = world.countries.ru;
+  assert.ok(ru.provinces.length > 0);
+  assert.ok(ru.provinces.every((p) => p.mayor.appointed && p.mayor.partyId === ru.rulingPartyId));
+  assert.equal(ru.nextLocalElectionDay, Number.MAX_SAFE_INTEGER);
 });
 
 test('seçimi kazanan oyuncu gölge kabinesi ve vaatleriyle iktidara gelir, kaybedince muhalefete döner', () => {

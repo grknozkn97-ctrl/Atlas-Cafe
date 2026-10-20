@@ -157,7 +157,8 @@ setInterval(() => {
   const nights = tickWorld(world, rng);
   for (const n of nights) {
     for (const id of n.playerIds) {
-      sendToPlayer(id, { type: 'electionNight', countryId: n.countryId, countryName: n.countryName, result: n.result });
+      if (n.result) sendToPlayer(id, { type: 'electionNight', countryId: n.countryId, countryName: n.countryName, result: n.result });
+      if (n.local) sendToPlayer(id, { type: 'localElectionNight', countryId: n.countryId, countryName: n.countryName, result: n.local });
     }
   }
   broadcast();

@@ -22,6 +22,7 @@ for (let y = 0; y <= years; y++) {
   if (y < years)
     for (let d = 0; d < 365; d++) {
       for (const n of tickWorld(world, rng)) {
+        if (!n.result) continue;
         const c = world.countries[n.countryId];
         const name = (id: string) => c.parties.find((p) => p.id === id)?.short ?? id;
         const top = n.result.results

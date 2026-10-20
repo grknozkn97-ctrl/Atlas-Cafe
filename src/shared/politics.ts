@@ -4,6 +4,7 @@
 import { BUDGET_REFERENCE, MINISTRIES, MINISTRY_LABELS, WIN_THRESHOLD, formatGameDate } from './constants';
 import { generateMinister, ministerScore, type Rng } from './ministers';
 import { ELECTION_THRESHOLD, PARTY_SEEDS, REGION_SEEDS, genericRegions } from './parties';
+import { municipalAppeal } from './local';
 import { ActionError, addNews, addShock, clamp } from './sim';
 import type {
   ActivePromise,
@@ -277,7 +278,7 @@ export function stepPolitics(c: CountryState, day: number, rng: Rng) {
   const govShare = clamp(govShareRaw(c) + c.govCalib, 3, 92);
   const gov = c.parties.filter((p) => p.inGovernment);
   const opp = c.parties.filter((p) => !p.inGovernment);
-  const weight = (p: Party) => Math.max(0.2, p.appeal * (1 + p.org / 200) + p.momentum + promiseAppeal(p));
+  const weight = (p: Party) => Math.max(0.2, p.appeal * (1 + p.org / 200) + p.momentum + promiseAppeal(p) + municipalAppeal(c, p));
   const gw = gov.reduce((s, p) => s + weight(p), 0) || 1;
   const ow = opp.reduce((s, p) => s + weight(p), 0) || 1;
   const oppShare = opp.length ? 100 - govShare : 0;
@@ -386,7 +387,7 @@ export function foundParty(
 /** Gölge kabine için parti kadrosu (aday havuzu ülke havuzundan ayrıdır). */
 function ensureShadowPool(p: Party, c: CountryState, rng: Rng) {
   for (const m of MINISTRIES) {
-    if (!c.candidates[m].length) c.candidates[m].push(generateMinister(rng, c.names));
+    if (!c.candidates[m].length) c.candidates[m].push(generateMinister(rng, c.names, 0, m));
   }
   void p;
 }

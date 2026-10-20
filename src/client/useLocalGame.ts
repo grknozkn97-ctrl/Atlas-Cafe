@@ -78,11 +78,12 @@ export function useLocalGame() {
     error: null,
     notice: null,
     electionNight: null,
+    localNight: null,
     offline: true,
     ...snapshot(),
   }));
 
-  const ready = !!world.players[PLAYER_ID]?.partyId;
+  const ready = !!world.players[PLAYER_ID]?.membership;
   const effective = ready ? speedMs : 0;
 
   useEffect(() => {
@@ -99,7 +100,8 @@ export function useLocalGame() {
         ...s,
         ...snapshot(),
         lastTickAt: Date.now(),
-        electionNight: mine ? { countryName: mine.countryName, result: mine.result } : s.electionNight,
+        electionNight: mine?.result ? { countryName: mine.countryName, result: mine.result } : s.electionNight,
+        localNight: mine?.local ? { countryName: mine.countryName, result: mine.local } : s.localNight,
       }));
     }, effective);
     return () => clearInterval(t);
@@ -147,7 +149,7 @@ export function useLocalGame() {
     setState((s) => ({ ...s, dayMs: ms || s.dayMs, lastTickAt: Date.now() }));
   }, []);
 
-  const clearElection = useCallback(() => setState((s) => ({ ...s, electionNight: null })), []);
+  const clearElection = useCallback(() => setState((s) => ({ ...s, electionNight: null, localNight: null })), []);
   const clearError = useCallback(() => setState((s) => ({ ...s, error: null, notice: null })), []);
 
   return { state: { ...state, speedMs: effective }, send, login, logout, clearElection, clearError, setSpeed };

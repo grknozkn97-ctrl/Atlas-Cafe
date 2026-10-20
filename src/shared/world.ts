@@ -3,9 +3,10 @@ import { dayToDate } from './constants';
 import { COUNTRY_SEEDS } from './countries';
 import { applyEventOption, rollEvent } from './events';
 import type { Rng } from './ministers';
-import { foundParty, joinParty, leaveParty, resetGovCalib } from './politics';
-import { ActionError, addNews, calibrate, computeThreat, createCountry, militaryPower, stepDay } from './sim';
-import type { Character, CountryState, CountrySummary, ElectionResult, Ideology } from './types';
+import { quitParty } from './career';
+import { resetGovCalib } from './politics';
+import { addNews, calibrate, computeThreat, createCountry, militaryPower, stepDay } from './sim';
+import type { Character, CountryState, CountrySummary, ElectionResult, LocalElectionResult, Membership } from './types';
 
 export interface Player {
   id: string;
@@ -13,8 +14,14 @@ export interface Player {
   name: string;
   /** Oyuncunun siyaset yaptığı ülke (iktidarda ya da muhalefette) */
   countryId: string | null;
+  /** Genel başkanı olduğu parti */
   partyId: string | null;
   character: Character | null;
+  membership?: Membership | null;
+  fame?: number;
+  cooldowns?: Record<string, number>;
+  /** Bu ülkede kaç kez parti değiştirdi */
+  hops?: number;
 }
 
 export interface World {
@@ -28,7 +35,8 @@ export interface ElectionNight {
   playerIds: string[];
   countryId: string;
   countryName: string;
-  result: ElectionResult;
+  result?: ElectionResult;
+  local?: LocalElectionResult;
 }
 
 export function createWorld(rng: Rng): World {
@@ -61,7 +69,7 @@ export function tickWorld(world: World, rng: Rng): ElectionNight[] {
     const owned = c.ownerId !== null;
     if (!owned && isMonthStart) aiMonthly(c, day, date.getUTCMonth());
 
-    const { election } = stepDay(c, day, ctx, rng);
+    const { election, local } = stepDay(c, day, ctx, rng);
 
     // Olaylar
     const ev = rollEvent(c, day, rng);
@@ -79,57 +87,19 @@ export function tickWorld(world: World, rng: Rng): ElectionNight[] {
     }
     c.pendingEvents = c.pendingEvents.filter((p) => p.deadlineDay > day);
 
-    if (election) {
+    if (election || local) {
       const playerIds = Object.values(world.players)
         .filter((p) => p.countryId === c.id)
         .map((p) => p.id);
-      nights.push({ playerIds, countryId: c.id, countryName: c.name, result: election.result });
+      nights.push({ playerIds, countryId: c.id, countryName: c.name, result: election?.result, local });
     }
   }
   return nights;
 }
 
-function requireCharacter(player: Player): Character {
-  if (!player.character) throw new ActionError('Önce karakterini oluştur.');
-  return player.character;
-}
-
-function leaveCurrent(world: World, player: Player) {
-  if (player.countryId) leaveParty(world.countries[player.countryId], player.id, world.day);
-  player.countryId = null;
-  player.partyId = null;
-}
-
-export function joinCountryParty(world: World, player: Player, countryId: string, partyId: string, rng: Rng) {
-  const c = world.countries[countryId];
-  if (!c) throw new ActionError('Ülke bulunamadı.');
-  const ch = requireCharacter(player);
-  if (player.partyId === partyId) return 0;
-  leaveCurrent(world, player);
-  const delegates = joinParty(c, partyId, player.id, ch, world.day, rng);
-  player.countryId = countryId;
-  player.partyId = partyId;
-  return delegates;
-}
-
-export function foundCountryParty(
-  world: World,
-  player: Player,
-  countryId: string,
-  input: { name: string; short: string; color: string; ideology: Ideology },
-  rng: Rng,
-) {
-  const c = world.countries[countryId];
-  if (!c) throw new ActionError('Ülke bulunamadı.');
-  const ch = requireCharacter(player);
-  leaveCurrent(world, player);
-  const p = foundParty(c, input, player.id, ch, world.day, rng);
-  player.countryId = countryId;
-  player.partyId = p.id;
-}
-
 export function leaveCountry(world: World, player: Player) {
-  leaveCurrent(world, player);
+  quitParty(world, player);
+  player.countryId = null;
 }
 
 export function summarize(world: World): CountrySummary[] {

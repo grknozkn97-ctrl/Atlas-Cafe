@@ -19,8 +19,9 @@ import {
   dayToDate,
   formatGameDate,
 } from './constants';
-import { generateMinister, ministerScore, type Rng } from './ministers';
+import { generateMinister, hasTrait, ministerScore, traitEfficiency, type Rng } from './ministers';
 import { holdGeneralElection, initPolitics, stepPolitics, type ElectionOutcome } from './politics';
+import { holdLocalElection, initProvinces, stepProvinces } from './local';
 import type {
   Contribution,
   CountrySeed,
@@ -33,6 +34,8 @@ import type {
   QualityId,
   ReportCardEntry,
   ShockTarget,
+  Directive,
+  LocalElectionResult,
 } from './types';
 
 const DT = 1 / 365;
@@ -59,10 +62,18 @@ function shockContributions(c: CountryState, target: ShockTarget): Contribution[
   return [...byLabel].map(([label, value]) => ({ label, value }));
 }
 
-function ministerEfficiency(m: Minister | null): number {
+function ministerEfficiency(m: Minister | null, directive: Directive = 'dengeli'): number {
   if (!m) return 0.45;
-  return (0.6 + 0.6 * m.competence) * (1 - (1 - m.honesty) * 0.3);
+  return (0.6 + 0.6 * m.competence) * (1 - (1 - m.honesty) * 0.3) * traitEfficiency(m) * DIRECTIVES[directive].efficiency;
 }
+
+/** Bakana verilebilecek talimatlar */
+export const DIRECTIVES: Record<Directive, { label: string; desc: string; efficiency: number; approval: number; bureaucracy: number }> = {
+  dengeli: { label: 'Dengeli', desc: 'Olağan çalışma.', efficiency: 1, approval: 0, bureaucracy: 0 },
+  tasarruf: { label: 'Tasarruf', desc: 'Kaynağı israf etme: verim +%6, ama kamu çalışanları rahatsız (destek -0,3).', efficiency: 1.06, approval: -0.3, bureaucracy: 0 },
+  atilim: { label: 'Atılım', desc: 'Hızlı sonuç: verim +%10 ve destek +0,3, ama bürokrasi yıpranır.', efficiency: 1.1, approval: 0.3, bureaucracy: -0.15 },
+  reform: { label: 'Reform', desc: 'Yapısal dönüşüm: bürokrasi her ay iyileşir, kısa vadede destek -0,4.', efficiency: 0.97, approval: -0.4, bureaucracy: 0.2 },
+};
 
 export function budgetTotal(c: CountryState): number {
   return MINISTRIES.reduce((s, m) => s + c.budget[m], 0);
@@ -179,7 +190,7 @@ export function qualityTargets(c: CountryState): Record<QualityId, number> {
     const q = MINISTRY_QUALITY[m];
     if (!q) continue;
     const ratio = c.budget[m] / BUDGET_REFERENCE[m];
-    out[q] = 100 * (1 - Math.exp(-1.2 * ratio * ministerEfficiency(c.ministers[m]) * bureau * leaderBonus(c, q)));
+    out[q] = 100 * (1 - Math.exp(-1.2 * ratio * ministerEfficiency(c.ministers[m], c.directives?.[m]) * bureau * leaderBonus(c, q)));
   }
   const k = c.completed;
   out.saglik! += k.hastane * 2;
@@ -266,9 +277,12 @@ function factorValues(c: CountryState): Record<FactorId, number> {
 
 function globalApprovalTerms(c: CountryState): Contribution[] {
   const ms = MINISTRIES.map((m) => c.ministers[m]).filter((m): m is Minister => !!m);
-  const pop = ms.length ? ms.reduce((s, m) => s + m.popularity, 0) / ms.length : 0.3;
+  const popOf = (m: Minister) => m.popularity + (hasTrait(m, 'medyatik') ? 0.15 : 0) + (hasTrait(m, 'populist') ? 0.1 : 0);
+  const pop = ms.length ? ms.reduce((s, m) => s + popOf(m), 0) / ms.length : 0.3;
+  const directive = MINISTRIES.reduce((s, m) => s + DIRECTIVES[c.directives?.[m] ?? 'dengeli'].approval, 0);
   return [
     { label: 'Kabinenin popülerliği', value: (pop - 0.5) * 10 },
+    ...(directive ? [{ label: 'Bakanlara verilen talimatlar', value: directive }] : []),
     { label: 'Dış tehdit', value: -Math.max(0, c.threat - 60) * 0.2 },
     ...shockContributions(c, 'approval'),
   ];
@@ -322,8 +336,8 @@ export function createCountry(seed: CountrySeed, rng: Rng): CountryState {
   const ministers = {} as Record<MinistryId, Minister | null>;
   const candidates = {} as Record<MinistryId, Minister[]>;
   for (const m of MINISTRIES) {
-    ministers[m] = { ...generateMinister(rng, seed.names), appointedDay: 0 };
-    candidates[m] = [0, 1, 2].map(() => generateMinister(rng, seed.names));
+    ministers[m] = { ...generateMinister(rng, seed.names, 0, m), appointedDay: 0 };
+    candidates[m] = [0, 1, 2].map(() => generateMinister(rng, seed.names, 0, m));
   }
 
   const playable = seed.regime !== 'otoriter';
@@ -393,6 +407,10 @@ export function createCountry(seed: CountrySeed, rng: Rng): CountryState {
     leaderName: '',
     activePromises: [],
     govCalib: 0,
+    provinces: [],
+    nextLocalElectionDay: Number.MAX_SAFE_INTEGER,
+    lastLocalElection: null,
+    directives: {},
     rivals: seed.rivals,
     playable,
     names: seed.names,
@@ -411,6 +429,7 @@ export function createCountry(seed: CountrySeed, rng: Rng): CountryState {
   c.military = militaryPower(c);
   calibrate(c);
   initPolitics(c, rng);
+  initProvinces(c, rng);
   return c;
 }
 
@@ -466,6 +485,7 @@ export function computeThreat(c: CountryState, ctx: WorldContext): number {
 
 export interface StepResult {
   election?: ElectionOutcome;
+  local?: LocalElectionResult;
 }
 
 /** Bir oyun günü ilerlet. */
@@ -506,7 +526,7 @@ export function stepDay(c: CountryState, day: number, ctx: WorldContext, rng: Rn
   c.expectedInflation += (c.inflation - c.expectedInflation) / 150;
   c.residual.inflation *= 1 - DT;
   c.gdp *= 1 + (c.growth / 100) * DT;
-  c.population *= 1 + 0.006 * DT;
+  if (!c.provinces?.length) c.population *= 1 + 0.006 * DT;
   // Enflasyon asgari ücretin alım gücünü eritir (ortalama ücretler kısmen endekslidir).
   c.minWageRatio *= 1 - (Math.max(0, c.inflation) / 100) * DT * 0.6;
 
@@ -532,6 +552,9 @@ export function stepDay(c: CountryState, day: number, ctx: WorldContext, rng: Rn
   if (c.playable && day >= c.nextElectionDay) {
     result.election = holdGeneralElection(c, day, rng);
   }
+  if (c.playable && day >= c.nextLocalElectionDay) {
+    result.local = holdLocalElection(c, day, rng);
+  }
   return result;
 }
 
@@ -549,11 +572,18 @@ function monthly(c: CountryState, day: number, rng: Rng) {
   });
   if (c.history.length > 240) c.history.shift();
   if (c.leader?.background === 'hukukcu') c.bureaucracy = clamp(c.bureaucracy + 0.25, 0, 100);
+  for (const m of MINISTRIES) {
+    const min = c.ministers[m];
+    let b = DIRECTIVES[c.directives?.[m] ?? 'dengeli'].bureaucracy;
+    if (min && hasTrait(min, 'reformcu')) b += 0.1;
+    if (b) c.bureaucracy = clamp(c.bureaucracy + b, 0, 100);
+  }
+  stepProvinces(c, day, rng);
 
   // Dürüst olmayan bakanlar skandala karışabilir.
   for (const m of MINISTRIES) {
     const min = c.ministers[m];
-    if (min && rng() < (1 - min.honesty) * 0.02) {
+    if (min && rng() < (1 - min.honesty) * 0.02 * (hasTrait(min, 'golgeli') ? 2 : 1)) {
       addShock(c, day, 'Yolsuzluk skandalı', 'approval', -2, 120);
       c.bureaucracy = clamp(c.bureaucracy - 0.5, 0, 100);
       addNews(c, day, `${MINISTRY_LABELS[m]} Bakanı ${min.name} yolsuzluk iddialarıyla gündemde.`, 'kotu');
@@ -624,7 +654,7 @@ function refreshCandidates(c: CountryState, day: number, rng: Rng) {
   const bonus = Math.min(0.15, (day / 3650) * 0.15);
   for (const m of MINISTRIES) {
     if (rng() < 0.35) {
-      c.candidates[m].push(generateMinister(rng, c.names, bonus));
+      c.candidates[m].push(generateMinister(rng, c.names, bonus, m));
       if (c.candidates[m].length > 5) {
         c.candidates[m].sort((a, b) => ministerScore(b) - ministerScore(a));
         c.candidates[m].length = 5;

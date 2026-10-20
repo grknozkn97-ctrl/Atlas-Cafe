@@ -65,6 +65,17 @@ export interface CountrySeed {
   names: 'tr' | 'genel';
 }
 
+export type TraitId =
+  | 'teknokrat'
+  | 'populist'
+  | 'reformcu'
+  | 'sadik'
+  | 'hirsli'
+  | 'tecrubeli'
+  | 'medyatik'
+  | 'tasarrufcu'
+  | 'golgeli';
+
 export interface Minister {
   id: string;
   name: string;
@@ -74,6 +85,76 @@ export interface Minister {
   honesty: number;
   popularity: number;
   appointedDay?: number;
+  age?: number;
+  avatar?: Avatar;
+  profession?: string;
+  traits?: TraitId[];
+  bio?: string;
+  ideology?: Ideology;
+}
+
+export type MunicipalProjectType = 'topluKonut' | 'park' | 'sanayi' | 'metro' | 'kentselDonusum';
+
+export interface Mayor extends Minister {
+  partyId: string;
+  /** Halkın belediyeye memnuniyeti 0-100 */
+  approval: number;
+  sinceDay: number;
+  /** Otoriter rejimlerde atanmış vali */
+  appointed: boolean;
+}
+
+export interface Province {
+  id: string;
+  name: string;
+  lat: number;
+  lon: number;
+  /** Nüfus (milyon) */
+  pop: number;
+  pop0: number;
+  /** Konut sayısı */
+  houses: number;
+  /** Ortalama hane büyüklüğü */
+  hh: number;
+  /** Kentleşme oranı 0-100 */
+  urban: number;
+  lean: Ideology;
+  mayor: Mayor;
+  services: number;
+  infra: number;
+  jobs: number;
+  /** Belediye kasası (milyon $) */
+  funds: number;
+  /** Belediye bütçe dağılımı (%) */
+  alloc: { konut: number; ulasim: number; sosyal: number; cevre: number };
+  propertyTax: 'dusuk' | 'orta' | 'yuksek';
+  projects: { type: MunicipalProjectType; endDay: number; byState: boolean }[];
+  built: Record<MunicipalProjectType, number>;
+  /** Yerel seçimde aday gösterilebilecek isimler */
+  pool: Minister[];
+  /** Oyuncu partilerinin gösterdiği adaylar: partyId -> aday */
+  nominees: Record<string, Minister>;
+  popHistory: number[];
+  houseHistory: number[];
+  lastVote: { partyId: string; vote: number }[] | null;
+}
+
+export interface LocalElectionResult {
+  day: number;
+  /** Partilerin kazandığı il sayısı ve yönettikleri nüfus */
+  tally: { partyId: string; provinces: number; pop: number }[];
+  flips: number;
+}
+
+export type MediaAction = 'tv' | 'radyo' | 'sosyalMedya' | 'sahaCalismasi' | 'mitingKonusmasi';
+
+export type PartyRole = 'uye' | 'ilBaskani' | 'myk' | 'genelBaskanYardimcisi' | 'genelBaskan';
+
+export interface Membership {
+  partyId: string;
+  /** Partinin oyuncuya güveni 0-100 */
+  trust: number;
+  joinedDay: number;
 }
 
 export interface Project {
@@ -284,6 +365,7 @@ export interface CountryState {
   taxes: Taxes;
   minWageRatio: number;
   budget: Record<MinistryId, number>;
+  directives: Partial<Record<MinistryId, Directive>>;
   cbIndependent: boolean;
 
   quality: Record<QualityId, number>;
@@ -331,6 +413,9 @@ export interface CountryState {
   leader: Character | null;
   leaderName: string;
   activePromises: ActivePromise[];
+  provinces: Province[];
+  nextLocalElectionDay: number;
+  lastLocalElection: LocalElectionResult | null;
   /** Hükümet payı kalibrasyonu (seçimden sonra sönümlenir) */
   govCalib: number;
   rivals: string[];
@@ -370,7 +455,14 @@ export interface PlayerView {
   name: string;
   character: Character | null;
   countryId: string | null;
+  /** Genel başkanı olduğu parti */
   partyId: string | null;
+  /** Üyesi olduğu parti ve partinin güveni */
+  membership: Membership | null;
+  role: PartyRole | null;
+  /** Kamuoyunda tanınırlık 0-100 */
+  fame: number;
+  cooldowns: Record<string, number>;
 }
 
 /** İstemciden sunucuya giden mesajlar */
@@ -387,6 +479,20 @@ export type ClientMessage =
       ideology: Ideology;
     }
   | { type: 'leaveCountry' }
+  | { type: 'leaveParty' }
+  | { type: 'media'; action: MediaAction; regionId?: string }
+  | { type: 'challengeLeader' }
+  | { type: 'nominateMayor'; provinceId: string; candidateId: string | null }
+  | { type: 'nominateAll' }
+  | {
+      type: 'municipal';
+      provinceId: string;
+      alloc?: Province['alloc'];
+      propertyTax?: Province['propertyTax'];
+      project?: MunicipalProjectType;
+    }
+  | { type: 'stateInvest'; provinceId: string; project: MunicipalProjectType }
+  | { type: 'ministerDirective'; ministry: MinistryId; directive: Directive }
   | { type: 'partyAction'; action: 'miting'; regionId: string }
   | { type: 'partyAction'; action: 'teskilat' | 'bagis' | 'aciklama' | 'erkenSecim' }
   | { type: 'setPromises'; promises: PromiseId[] }
@@ -412,4 +518,8 @@ export type ServerMessage =
     }
   | { type: 'error'; message: string }
   | { type: 'notice'; message: string }
-  | { type: 'electionNight'; countryId: string; countryName: string; result: ElectionResult };
+  | { type: 'electionNight'; countryId: string; countryName: string; result: ElectionResult }
+  | { type: 'localElectionNight'; countryId: string; countryName: string; result: LocalElectionResult };
+
+/** Bakana verilen çalışma talimatı */
+export type Directive = 'dengeli' | 'tasarruf' | 'atilim' | 'reform';
