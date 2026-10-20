@@ -15,7 +15,7 @@ import type { ClientMessage, CountryState, Minister, MunicipalProjectType, Playe
 import { n0, n1 } from '../format';
 import { MinisterProfile, PersonCard } from '../ui/MinisterProfile';
 import { ProvinceMap } from '../ui/ProvinceMap';
-import { Skyline } from '../ui/Skyline';
+import { City3D } from '../ui/City3D';
 import { Meter, Stat } from '../ui/Widgets';
 
 type Send = (m: ClientMessage) => void;
@@ -43,7 +43,7 @@ function trend(pv: Province) {
 }
 
 export function ProvincesPanel({ c, me, day, send, governing }: { c: CountryState; me: PlayerView; day: number; send: Send; governing: boolean }) {
-  const [sel, setSel] = useState<string | null>(null);
+  const [sel, setSel] = useState<string | null>(me.office?.provinceId ?? null);
   const [q, setQ] = useState('');
   const [view, setView] = useState<'parti' | 'gocc'>('parti');
   const myParty = c.parties.find((p) => p.id === me.partyId) ?? null;
@@ -127,7 +127,7 @@ function ProvinceDetail({ c, pv, me, day, send, governing }: { c: CountryState; 
   const [picking, setPicking] = useState(false);
   const party = c.parties.find((p) => p.id === pv.mayor.partyId);
   const myParty = c.parties.find((p) => p.id === me.partyId) ?? null;
-  const owned = !!myParty && pv.mayor.partyId === myParty.id && isPlayerMunicipality(c, pv);
+  const owned = pv.mayor.playerId === me.id || (!!myParty && pv.mayor.partyId === myParty.id && isPlayerMunicipality(c, pv));
   const elections = c.nextLocalElectionDay < Number.MAX_SAFE_INTEGER && !pv.mayor.appointed;
   const ratio = housingRatio(pv);
   const A = attractiveness(pv);
@@ -152,7 +152,7 @@ function ProvinceDetail({ c, pv, me, day, send, governing }: { c: CountryState; 
           {A > 0.15 ? 'Göç alıyor' : A > -0.1 ? 'Durağan' : 'Göç veriyor'}
         </div>
       </div>
-      <Skyline pv={pv} />
+      <City3D c={c} pv={pv} />
       <div className="pd-stats">
         <Stat icon="🏠" label={`konut · hane başına ${n1(ratio)}`} value={`${n0(pv.houses / 1000)} bin`} tone={ratio >= 1.02 ? 'good' : ratio >= 0.95 ? 'mid' : 'bad'} />
         <Stat icon="🩺" label="hizmet" value={n0(pv.services)} tone={pv.services > 60 ? 'good' : pv.services > 40 ? 'mid' : 'bad'} />
@@ -239,7 +239,7 @@ function ProvinceDetail({ c, pv, me, day, send, governing }: { c: CountryState; 
 
       {owned && <MunicipalControls c={c} pv={pv} day={day} send={send} />}
       {!owned && myParty && pv.mayor.partyId === myParty.id && pv.mayor.appointed && <p className="small muted">Bu il atanmış bir valiyle yönetiliyor.</p>}
-      {!owned && !governing && (
+      {!owned && !governing && !pv.mayor.playerId && (
         <p className="small muted">
           {elections
             ? 'Bu ili yönetmek için partinin yerel seçimi kazanması ve senin partinin genel başkanı olman gerekir.'

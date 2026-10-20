@@ -5,6 +5,7 @@ import { dispatch, playerView } from './dispatch';
 import { createRng } from './ministers';
 import { stepProvinces } from './local';
 import { advise, ministerSwapEstimate } from './advisor';
+import { eligibleOffers } from './offices';
 import {
   inflationTarget,
   raiseMinWage,
@@ -275,11 +276,61 @@ test('danışman üyeye güven kazandıracak işleri, iktidara bakan değişikli
   dispatch(world, player, { type: 'joinParty', countryId: 'tr', partyId: c.parties.find((p) => p.short === 'CHP')!.id }, rng);
   const tips = advise(c, playerView(player)!, world.day);
   assert.ok(tips.length >= 3);
-  assert.equal(tips[0].action?.type, 'media');
+  assert.ok(tips.some((t) => t.action?.type === 'media'));
+  assert.ok(tips.some((t) => t.action?.type === 'acceptOffer'), 'parti yeni üyeye görev teklif etmeli');
   assert.match(tips.find((t) => t.id === 'media:sahaCalismasi')!.estimate, /güveni \+4/);
   // Bakan tahmini: çok yetkin aday onayı artırır.
   const cand = { ...c.candidates.saglik[0], competence: 1, popularity: 0.9, integrity: 1 };
   const weak = { ...c.ministers.saglik!, competence: 0.1 };
   const cc = { ...c, ministers: { ...c.ministers, saglik: weak } };
   assert.ok(ministerSwapEstimate(cc, 'saglik', cand).approval > 0);
+});
+
+test('parti üyesine karakterine göre görev teklif eder; belediye başkanvekili ili yönetir', () => {
+  const world = createWorld(createRng(31));
+  const player = newPlayer(world);
+  const c = world.countries.tr;
+  const rng = createRng(32);
+  const chp = c.parties.find((p) => p.short === 'CHP')!;
+  dispatch(world, player, { type: 'joinParty', countryId: 'tr', partyId: chp.id }, rng);
+  // Sendikacı karaktere teşkilat ya da il başkanlığı gibi saha görevleri yakışır.
+  player.membership!.trust = 40;
+  player.offers = [];
+  const offers = eligibleOffers(c, player, world.day);
+  assert.ok(offers.some((o) => o.office === 'belediyeBaskani'), 'güvenilir üyeye belediye teklif edilmeli');
+  const mayorOffer = offers.find((o) => o.office === 'belediyeBaskani')!;
+  player.offers = [mayorOffer];
+  dispatch(world, player, { type: 'acceptOffer', offerId: mayorOffer.id }, rng);
+  const pv = c.provinces.find((x) => x.id === mayorOffer.provinceId)!;
+  assert.equal(pv.mayor.playerId, 'p1');
+  assert.equal(pv.mayor.partyId, chp.id);
+  assert.equal(player.office?.id, 'belediyeBaskani');
+  assert.ok(player.office?.goal);
+  // Genel başkan olmadan da kendi belediyesini yönetebilir.
+  dispatch(world, player, { type: 'municipal', provinceId: pv.id, propertyTax: 'dusuk' }, rng);
+  assert.equal(pv.propertyTax, 'dusuk');
+  // Başka bir ili yönetemez.
+  const other = c.provinces.find((x) => x.id !== pv.id && x.mayor.partyId === chp.id)!;
+  assert.throws(() => dispatch(world, player, { type: 'municipal', provinceId: other.id, propertyTax: 'dusuk' }, rng), /yönetmek/);
+  // Partiden ayrılınca görev biter, belediye partide kalır.
+  dispatch(world, player, { type: 'leaveParty' }, rng);
+  assert.equal(player.office, null);
+  assert.equal(pv.mayor.playerId, undefined);
+  assert.equal(pv.mayor.partyId, chp.id);
+});
+
+test('görev teklifleri karaktere göre değişir', () => {
+  const world = createWorld(createRng(41));
+  const mk = (id: string, background: 'ekonomist' | 'sendikaci' | 'akademisyen') => {
+    const p: Player = { id, token: id, name: id, countryId: null, partyId: null, character: null };
+    world.players[id] = p;
+    dispatch(world, p, { type: 'createCharacter', character: { name: 'Aday ' + id.toUpperCase(), age: 45, background, ideology: { economic: -0.3, social: -0.4 }, avatar: { skin: 1, hair: 1, hairColor: 0, suit: 0, tie: 0 } } }, createRng(1));
+    dispatch(world, p, { type: 'joinParty', countryId: 'tr', partyId: world.countries.tr.parties.find((x) => x.short === 'CHP')!.id }, createRng(2));
+    p.membership!.trust = 45;
+    p.offers = [];
+    return eligibleOffers(world.countries.tr, p, world.day).filter((o) => !['belediyeBaskani', 'ilBaskani'].includes(o.office))[0]?.office;
+  };
+  assert.equal(mk('a', 'ekonomist'), 'ekonomiMasasi');
+  assert.equal(mk('b', 'sendikaci'), 'teskilatBaskani');
+  assert.equal(mk('c', 'akademisyen'), 'sozcu');
 });

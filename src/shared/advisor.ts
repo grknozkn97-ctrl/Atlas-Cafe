@@ -1,9 +1,10 @@
 import { CHALLENGE_TRUST, MEDIA, challengeChance, mediaEffect } from './career';
 import { MINISTRIES, MINISTRY_LABELS } from './constants';
 import { attractiveness, housingRatio, isPlayerMunicipality, nominationCost, projectCost } from './local';
+import { OFFICES, goalProgress, goalValue, officeTitle } from './offices';
 import { ACTION_COOLDOWNS, ACTION_COSTS, regionFit, topIssue } from './politics';
 import { approvalFromGroups, approvalTargets, clamp, confidenceTarget, inCampaign, qualityTargets } from './sim';
-import type { ClientMessage, CountryState, MediaAction, Minister, MinistryId, Party, PlayerView } from './types';
+import type { ClientMessage, CountryState, MediaAction, Minister, MinistryId, Party, PlayerView, Province } from './types';
 
 /** Danışmanın tek bir önerisi. */
 export interface Advice {
@@ -368,9 +369,9 @@ function governmentAdvice(c: CountryState, me: PlayerView, p: Party, day: number
   return out;
 }
 
-function municipalityAdvice(c: CountryState, p: Party): Advice[] {
+function municipalityAdvice(c: CountryState, provinces: Province[]): Advice[] {
   const out: Advice[] = [];
-  for (const pv of c.provinces.filter((x) => isPlayerMunicipality(c, x) && x.mayor.partyId === p.id)) {
+  for (const pv of provinces) {
     const h = housingRatio(pv);
     if (h < 1 && pv.alloc.konut < 40) {
       out.push({
@@ -407,6 +408,39 @@ function municipalityAdvice(c: CountryState, p: Party): Advice[] {
   return out;
 }
 
+function officeAdvice(c: CountryState, me: PlayerView, p: Party, day: number): Advice[] {
+  const out: Advice[] = [];
+  const bg = me.character?.background;
+  for (const o of me.offers) {
+    const spec = OFFICES[o.office];
+    const fits = !!bg && spec.fits.includes(bg);
+    out.push({
+      id: `teklif:${o.id}`,
+      icon: spec.icon,
+      title: `Teklif: ${officeTitle({ id: o.office, provinceId: o.provinceId }, c)}`,
+      why: o.why,
+      estimate: `${spec.perks}${fits ? ' Karakterine çok uygun bir görev.' : ''} Teklif ${Math.max(0, o.expires - day)} gün geçerli.`,
+      action: { type: 'acceptOffer', offerId: o.id },
+      priority: 70 + (fits ? 15 : 0) - (me.office ? 20 : 0),
+    });
+  }
+  const g = me.office?.goal;
+  if (me.office && g) {
+    const v = goalValue(c, g.kind, me.office, p.id, me.stats);
+    const left = g.deadline - day;
+    out.push({
+      id: 'gorevHedefi',
+      icon: '🎯',
+      title: `Görev hedefi: ${g.label}`,
+      why: `${officeTitle(me.office, c)} olarak genel merkez senden bunu bekliyor. ${left} gün kaldı.`,
+      estimate: `İlerleme %${Math.round(goalProgress(g, v) * 100)}. Başarırsan partinin güveni +${g.reward}, başaramazsan −5.`,
+      goto: me.office.id === 'belediyeBaskani' || me.office.id === 'ilBaskani' ? 'iller' : 'parti',
+      priority: 50 + (left < 60 ? 25 : 0),
+    });
+  }
+  return out;
+}
+
 /** Oyuncunun durumuna göre sıralı öneriler. */
 export function advise(c: CountryState, me: PlayerView, day: number): Advice[] {
   const m = me.membership;
@@ -418,6 +452,10 @@ export function advise(c: CountryState, me: PlayerView, day: number): Advice[] {
   if (!isLeader) list = memberAdvice(c, me, p, day);
   else if (p.inGovernment) list = governmentAdvice(c, me, p, day);
   else list = oppositionLeaderAdvice(c, me, p, day);
-  if (isLeader) list.push(...municipalityAdvice(c, p));
+  if (isLeader) list.push(...municipalityAdvice(c, c.provinces.filter((x) => isPlayerMunicipality(c, x) && x.mayor.partyId === p.id)));
+  else {
+    list.push(...municipalityAdvice(c, c.provinces.filter((x) => x.mayor.playerId === me.id)));
+    list.push(...officeAdvice(c, me, p, day));
+  }
   return list.sort((a, b) => b.priority - a.priority);
 }

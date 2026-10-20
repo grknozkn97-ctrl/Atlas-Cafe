@@ -4,9 +4,10 @@ import { COUNTRY_SEEDS } from './countries';
 import { applyEventOption, rollEvent } from './events';
 import type { Rng } from './ministers';
 import { quitParty } from './career';
+import { refreshOffers, stepOffice } from './offices';
 import { resetGovCalib } from './politics';
 import { addNews, calibrate, computeThreat, createCountry, militaryPower, stepDay } from './sim';
-import type { Character, CountryState, CountrySummary, ElectionResult, LocalElectionResult, Membership } from './types';
+import type { Character, CountryState, CountrySummary, ElectionResult, LocalElectionResult, Membership, Office, OfficeOffer } from './types';
 
 export interface Player {
   id: string;
@@ -22,6 +23,9 @@ export interface Player {
   cooldowns?: Record<string, number>;
   /** Bu ülkede kaç kez parti değiştirdi */
   hops?: number;
+  office?: Office | null;
+  offers?: OfficeOffer[];
+  stats?: { media: number };
 }
 
 export interface World {
@@ -87,6 +91,22 @@ export function tickWorld(world: World, rng: Rng): ElectionNight[] {
     }
     c.pendingEvents = c.pendingEvents.filter((p) => p.deadlineDay > day);
 
+    if (isMonthStart) {
+      for (const pl of Object.values(world.players)) {
+        if (pl.countryId !== c.id) continue;
+        stepOffice(world, pl, rng);
+        refreshOffers(world, pl, rng);
+      }
+    }
+    if (local) {
+      // Seçimi kaybeden oyuncu belediye başkanları görevi bırakır.
+      for (const pl of Object.values(world.players)) {
+        if (pl.countryId === c.id && pl.office?.id === 'belediyeBaskani') {
+          const pv = c.provinces.find((x) => x.id === pl.office!.provinceId);
+          if (!pv || pv.mayor.playerId !== pl.id) pl.office = null;
+        }
+      }
+    }
     if (election || local) {
       const playerIds = Object.values(world.players)
         .filter((p) => p.countryId === c.id)

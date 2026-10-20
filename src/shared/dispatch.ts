@@ -10,6 +10,7 @@ import { makeCharacter, partyAction, playerParty, setPromises, setShadow } from 
 import { ActionError, DIRECTIVES } from './sim';
 import type { ClientMessage } from './types';
 import { leaveCountry, type Player, type World } from './world';
+import { acceptOffer, declineOffer, endOffice } from './offices';
 
 export { playerView } from './career';
 
@@ -40,6 +41,15 @@ export function dispatch(world: World, player: Player, msg: ClientMessage, rng: 
       return doMedia(world, player, msg.action, rng);
     case 'challengeLeader':
       return challengeLeader(world, player, rng);
+    case 'acceptOffer':
+      return acceptOffer(world, player, msg.offerId);
+    case 'declineOffer':
+      declineOffer(player, msg.offerId);
+      return 'Teklifi geri çevirdin. Parti biraz kırıldı (güven −1).';
+    case 'resignOffice':
+      endOffice(world, player, player.character ? `${player.character.name} görevinden istifa etti.` : undefined);
+      if (player.membership) player.membership.trust = Math.max(0, player.membership.trust - 3);
+      return 'Görevinden istifa ettin.';
   }
   const c = player.countryId ? world.countries[player.countryId] : null;
   if (!c) throw new ActionError('Önce bir ülkede siyasete atılmalısın.');
@@ -67,7 +77,8 @@ export function dispatch(world: World, player: Player, msg: ClientMessage, rng: 
     case 'municipal': {
       const pv = c.provinces.find((x) => x.id === msg.provinceId);
       if (!pv) throw new ActionError('İl bulunamadı.');
-      if (!party || pv.mayor.partyId !== party.id || !isPlayerMunicipality(c, pv)) {
+      const ownMayor = pv.mayor.playerId === player.id;
+      if (!ownMayor && (!party || pv.mayor.partyId !== party.id || !isPlayerMunicipality(c, pv))) {
         throw new ActionError('Bu ili yönetmek için belediyenin senin partinde olması gerekir.');
       }
       return municipalAction(c, pv, world.day, msg);

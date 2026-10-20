@@ -2,6 +2,7 @@
  * Oyuncunun parti içi kariyeri: üyelik, partinin güveni, medya çalışmaları, kurultay yarışı ve parti değiştirme.
  * Genel başkanlık kendiliğinden gelmez: ya kendi partini kurarsın ya da güven kazanıp kurultayı kazanırsın.
  */
+import { endOffice, refreshOffers } from './offices';
 import { formatGameDate } from './constants';
 import type { Rng } from './ministers';
 import { foundParty, ideologyDistance, joinParty, leaveParty } from './politics';
@@ -62,6 +63,8 @@ export function quitParty(world: World, player: Player) {
   const p = c?.parties.find((x) => x.id === m.partyId);
   if (c && player.partyId) leaveParty(c, player.id, world.day);
   else if (c && p && player.character) addNews(c, world.day, `${player.character.name}, ${p.short} üyeliğinden istifa etti.`, 'notr');
+  endOffice(world, player);
+  player.offers = [];
   player.membership = null;
   player.partyId = null;
   player.hops = (player.hops ?? 0) + 1;
@@ -84,6 +87,8 @@ export function joinAsMember(world: World, player: Player, countryId: string, pa
   player.countryId = countryId;
   player.membership = { partyId, trust: check.trust, joinedDay: world.day };
   addNews(c, world.day, `${ch.name} ${p.short} saflarına katıldı.`, 'notr');
+  // Parti yeni üyesine hemen görev teklif eder.
+  refreshOffers(world, player, () => 0, true);
   return `${p.short} üyeliğin kabul edildi. Partinin sana güveni: ${check.trust}/100. Genel başkanlık için en az ${CHALLENGE_TRUST} güven gerekir.`;
 }
 
@@ -153,6 +158,7 @@ export function doMedia(world: World, player: Player, action: MediaAction, rng: 
   const e = mediaEffect(action, ch.charisma, player.fame ?? 0, isLeader);
   if (e.cost > p.funds) throw new ActionError(`Parti kasasında ${e.cost} milyon $ yok.`);
   p.funds -= e.cost;
+  player.stats = { media: (player.stats?.media ?? 0) + 1 };
   player.cooldowns = { ...(player.cooldowns ?? {}), [action]: day + spec.cooldown };
   // Gaf: tanınırlık yine artar ama parti rahatsız olur.
   if (rng() < e.risk) {
@@ -197,6 +203,8 @@ export function challengeLeader(world: World, player: Player, rng: Rng): string 
   if (rng() < chance) {
     const old = p.leaderName;
     const pct = joinParty(c, p.id, player.id, ch, world.day, rng);
+    endOffice(world, player);
+    player.offers = [];
     player.partyId = p.id;
     m.trust = 100;
     return `Kurultayı kazandın! ${old} yerine delegelerin %${pct.toFixed(0)} oyuyla genel başkan seçildin.`;
@@ -219,5 +227,8 @@ export function playerView(p: Player | null | undefined): PlayerView | null {
     fame: p.fame ?? 0,
     cooldowns: p.cooldowns ?? {},
     hops: p.hops ?? 0,
+    office: p.office ?? null,
+    offers: p.offers ?? [],
+    stats: p.stats ?? { media: 0 },
   };
 }

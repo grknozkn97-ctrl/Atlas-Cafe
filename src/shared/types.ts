@@ -102,6 +102,8 @@ export interface Mayor extends Minister {
   sinceDay: number;
   /** Otoriter rejimlerde atanmış vali */
   appointed: boolean;
+  /** Belediye başkanı bir oyuncuysa */
+  playerId?: string;
 }
 
 export interface Province {
@@ -151,6 +153,41 @@ export interface LocalElectionResult {
 export type MediaAction = 'tv' | 'radyo' | 'sosyalMedya' | 'sahaCalismasi' | 'mitingKonusmasi';
 
 export type PartyRole = 'uye' | 'ilBaskani' | 'myk' | 'genelBaskanYardimcisi' | 'genelBaskan';
+
+/** Partinin oyuncuya verebileceği görevler */
+export type OfficeId = 'belediyeBaskani' | 'ilBaskani' | 'sozcu' | 'ekonomiMasasi' | 'teskilatBaskani' | 'finansSorumlusu' | 'guvenlikMasasi';
+
+export type GoalKind = 'media' | 'org' | 'funds' | 'support' | 'approval' | 'localVote';
+
+export interface OfficeGoal {
+  kind: GoalKind;
+  label: string;
+  /** Başlangıç değeri (ilerleme bundan ölçülür) */
+  start: number;
+  /** Ulaşılması gereken değer */
+  target: number;
+  deadline: number;
+  /** Başarılırsa güven ödülü */
+  reward: number;
+}
+
+export interface Office {
+  id: OfficeId;
+  provinceId?: string;
+  sinceDay: number;
+  goal: OfficeGoal | null;
+  /** Tamamlanan hedef sayısı */
+  done: number;
+}
+
+export interface OfficeOffer {
+  id: string;
+  office: OfficeId;
+  provinceId?: string;
+  /** Teklifin gerekçesi (karaktere göre) */
+  why: string;
+  expires: number;
+}
 
 export interface Membership {
   partyId: string;
@@ -467,6 +504,10 @@ export interface PlayerView {
   cooldowns: Record<string, number>;
   /** Kaç kez parti değiştirdi (güveni düşürür) */
   hops: number;
+  office: Office | null;
+  offers: OfficeOffer[];
+  /** Görev hedefleri için sayaçlar */
+  stats: { media: number };
 }
 
 /** İstemciden sunucuya giden mesajlar */
@@ -486,6 +527,9 @@ export type ClientMessage =
   | { type: 'leaveParty' }
   | { type: 'media'; action: MediaAction; regionId?: string }
   | { type: 'challengeLeader' }
+  | { type: 'acceptOffer'; offerId: string }
+  | { type: 'declineOffer'; offerId: string }
+  | { type: 'resignOffice' }
   | { type: 'nominateMayor'; provinceId: string; candidateId: string | null }
   | { type: 'nominateAll' }
   | {

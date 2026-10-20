@@ -19,9 +19,11 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@types/three": "^0.169.0",
     "d3-geo": "^3.1.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "three": "^0.169.0",
     "topojson-client": "^3.1.0",
     "tsx": "^4.23.15",
     "world-atlas": "^2.0.2",

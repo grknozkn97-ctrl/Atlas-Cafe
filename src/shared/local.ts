@@ -275,6 +275,7 @@ function aiProject(c: CountryState, pv: Province, day: number) {
 }
 
 export function isPlayerMunicipality(c: CountryState, pv: Province) {
+  if (pv.mayor.playerId) return true;
   const p = c.parties.find((x) => x.id === pv.mayor.partyId);
   return !!p?.playerId && !pv.mayor.appointed;
 }
@@ -437,3 +438,10 @@ export function startMunicipalProject(c: CountryState, pv: Province, day: number
   return `${spec.label} başladı: ${cost.toFixed(0)} milyon $, ${spec.months} ay.`;
 }
 
+
+/** Şehrin gelişmişlik düzeyi 0-1: gelir, hizmet ve ulaşım. Görsellerde yeni/eski görünümü belirler. */
+export function development(c: CountryState, pv: Province) {
+  const income = (Math.log10(Math.max(1, gdpPc(c))) - 0.5) / 1.5;
+  const city = (pv.services + pv.infra - 100) / 200 + pv.built.metro * 0.05 + pv.built.kentselDonusum * 0.04;
+  return clamp(income * 0.75 + city + 0.1, 0, 1);
+}

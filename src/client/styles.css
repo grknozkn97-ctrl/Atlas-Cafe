@@ -654,9 +654,23 @@ select { font: inherit; padding: 6px 8px; border-radius: 8px; border: 1px solid 
 .provmap-land { fill: var(--land); stroke: var(--land-stroke); stroke-width: 1; stroke-linejoin: round; }
 .prov { cursor: pointer; }
 .prov-hit { fill: transparent; }
-.prov-dot { fill-opacity: 0.82; stroke: var(--surface); stroke-width: 1.2; transition: r 0.6s; }
-.prov-dot.mine { stroke: var(--gold); stroke-width: 1.8; }
-.prov:hover .prov-dot { fill-opacity: 1; }
+
+.prov-ground { fill-opacity: 0.4; stroke: currentColor; stroke-width: 0; }
+.prov-ground.mine { stroke: var(--gold); stroke-width: 1.4; }
+.prov:hover .prov-ground { fill-opacity: 0.8; }
+.prov .cluster { pointer-events: none; }
+.bld path { stroke: rgba(0, 0, 0, 0.25); stroke-width: 0.2; }
+.era-eski .bl { fill: #9c6b45; } .era-eski .br { fill: #7a5236; } .era-eski .bt { fill: #c49a6c; } .broof { fill: #a6402c; }
+.era-eski .t1 .bl { fill: #a8835a; } .era-eski .t1 .br { fill: #86663f; } .era-eski .t2 .bl { fill: #8d7b66; }
+.era-beton .bl { fill: #b9b3a6; } .era-beton .br { fill: #8f897d; } .era-beton .bt { fill: #d8d2c4; }
+.era-beton .t1 .bl { fill: #c9b9a0; } .era-beton .t1 .br { fill: #a08f76; } .era-beton .t2 .bl { fill: #a9aeb3; }
+.era-modern .bl { fill: #6fa3c9; } .era-modern .br { fill: #3f6f96; } .era-modern .bt { fill: #b9dcf2; }
+.era-modern .t1 .bl { fill: #8cb8c9; } .era-modern .t1 .br { fill: #577f91; } .era-modern .t2 .bl { fill: #9aa9bd; } .era-modern .t2 .br { fill: #5b6b82; }
+.map-zoom { position: absolute; top: 8px; right: 8px; background: var(--surface); }
+.map-legend { position: absolute; left: 8px; bottom: 6px; display: flex; gap: 10px; background: color-mix(in srgb, var(--surface) 80%, transparent); padding: 2px 8px; border-radius: 8px; }
+.map-legend span { display: inline-flex; gap: 4px; align-items: center; }
+.lg { display: inline-block; width: 9px; height: 9px; border-radius: 2px; }
+.lg.era-eski { background: #9c6b45; } .lg.era-beton { background: #b9b3a6; } .lg.era-modern { background: #6fa3c9; }
 .prov-nom { fill: none; stroke: var(--gold); stroke-width: 1.5; stroke-dasharray: 3 2; }
 .prov-sel { fill: none; stroke: var(--text); stroke-width: 2; }
 .prov-label { font-size: 11px; text-anchor: middle; fill: var(--text); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; font-weight: 600; pointer-events: none; }
@@ -799,3 +813,24 @@ select { font: inherit; padding: 6px 8px; border-radius: 8px; border: 1px solid 
   .rung .small { font-size: 10px; }
   .nominate-cta { flex-direction: column; align-items: stretch; }
 }
+
+/* ---------------------------------------------------------------- parti görevleri */
+.office-card { border-top: 4px solid var(--gold); display: flex; flex-direction: column; gap: 8px; }
+.office-card h3 { margin: 0; }
+.office-now { display: flex; flex-direction: column; gap: 8px; }
+.office-title { display: flex; gap: 10px; align-items: center; }
+.office-icon { font-size: 28px; line-height: 1; }
+.goal { background: var(--surface-2); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.offers { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--border); padding-top: 10px; }
+.offer { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); animation: fadein 0.3s ease-out; }
+.offer.fit { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 8%, var(--surface-2)); }
+.offer-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.offer-body .tag { align-self: flex-start; }
+@media (max-width: 640px) {
+  .offer { grid-template-columns: 30px minmax(0, 1fr); }
+  .offer .advice-act { grid-column: 2; flex-direction: row; }
+}
+
+.city3d { position: relative; width: 100%; height: clamp(240px, 34vw, 380px); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); background: var(--surface-2); touch-action: none; }
+.city3d canvas { display: block; }
+.city3d-hint { position: absolute; left: 8px; bottom: 6px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.6); pointer-events: none; opacity: .85; }

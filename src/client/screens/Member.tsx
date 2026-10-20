@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CHALLENGE_TRUST, MEDIA, ROLE_LABELS, challengeChance, mediaEffect } from '../../shared/career';
 import { formatGameDate } from '../../shared/constants';
+import { OFFICES, goalProgress, goalValue, officeTitle } from '../../shared/offices';
 import type { ClientMessage, CountryState, MediaAction, Party, PartyRole, PlayerView } from '../../shared/types';
 import { n0, n1, pct } from '../format';
 import { Avatar } from '../ui/Avatar';
@@ -52,6 +53,94 @@ export function MediaCard({ me, p, day, send }: { me: PlayerView; p: Party; day:
           );
         })}
       </div>
+    </section>
+  );
+}
+
+/** Partinin verdiği görev ve bekleyen teklifler. */
+export function OfficeCard({ c, me, p, day, send, onGoto }: { c: CountryState; me: PlayerView; p: Party; day: number; send: Send; onGoto: () => void }) {
+  const [confirm, setConfirm] = useState(false);
+  const o = me.office;
+  const g = o?.goal;
+  const v = o && g ? goalValue(c, g.kind, o, p.id, me.stats) : 0;
+  const prog = g ? goalProgress(g, v) : 0;
+  const bg = me.character?.background;
+  return (
+    <section className="card office-card">
+      <h3>🗂️ Parti görevin</h3>
+      {o ? (
+        <div className="office-now">
+          <div className="office-title">
+            <span className="office-icon">{OFFICES[o.id].icon}</span>
+            <div>
+              <b>{officeTitle(o, c)}</b>
+              <div className="small muted">
+                {formatGameDate(o.sinceDay, false)}'den beri · {o.done} hedef tamamlandı
+              </div>
+            </div>
+          </div>
+          <p className="small muted">{OFFICES[o.id].perks}</p>
+          {g && (
+            <div className="goal">
+              <div className="slider-head small">
+                <span>🎯 {g.label}</span>
+                <b>%{Math.round(prog * 100)}</b>
+              </div>
+              <Meter value={prog * 100} color="var(--gold)" />
+              <div className="small muted">
+                Son gün {formatGameDate(g.deadline, false)} ({Math.max(0, g.deadline - day)} gün) · ödül: güven +{g.reward}
+              </div>
+            </div>
+          )}
+          <div className="actions">
+            {(o.id === 'belediyeBaskani' || o.id === 'ilBaskani') && (
+              <button className="primary small" onClick={onGoto}>
+                {o.id === 'belediyeBaskani' ? 'Belediyeni yönet →' : 'İli aç →'}
+              </button>
+            )}
+            <button
+              className={confirm ? 'danger small' : 'ghost small'}
+              onClick={() => {
+                if (confirm) send({ type: 'resignOffice' });
+                setConfirm((x) => !x);
+              }}
+            >
+              {confirm ? 'Emin misin? (güven −3)' : 'Görevden istifa et'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p className="small muted">Şu an bir görevin yok. Parti güvendikçe sana görev teklif eder; teklifler karakterine göre değişir.</p>
+      )}
+      {me.offers.length > 0 && (
+        <div className="offers">
+          <div className="title-kicker">Genel merkezden teklif</div>
+          {me.offers.map((of) => {
+            const spec = OFFICES[of.office];
+            const fits = !!bg && spec.fits.includes(bg);
+            return (
+              <div key={of.id} className={`offer ${fits ? 'fit' : ''}`}>
+                <span className="office-icon">{spec.icon}</span>
+                <div className="offer-body">
+                  <b>{officeTitle({ id: of.office, provinceId: of.provinceId }, c)}</b>
+                  {fits && <span className="tag gold">karakterine uygun</span>}
+                  <span className="small">{of.why}</span>
+                  <span className="small muted">{spec.perks}</span>
+                  <span className="small muted">{Math.max(0, of.expires - day)} gün içinde cevap ver{o ? ' · kabul edersen mevcut görevin biter' : ''}</span>
+                </div>
+                <div className="advice-act">
+                  <button className="primary small" onClick={() => send({ type: 'acceptOffer', offerId: of.id })}>
+                    Kabul et
+                  </button>
+                  <button className="ghost small" onClick={() => send({ type: 'declineOffer', offerId: of.id })}>
+                    Reddet
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }
@@ -134,7 +223,17 @@ function MemberHeader({ c, me, p, day }: { c: CountryState; me: PlayerView; p: P
           <PartyBadge p={p} size={18} /> {p.name} · {rankOf(c, p)}. parti
         </div>
         <h2>{ch.name}</h2>
-        <div className="small">{me.role ? ROLE_LABELS[me.role] : 'Üye'}</div>
+        <div className="small">
+          {me.role ? ROLE_LABELS[me.role] : 'Üye'}
+          {me.office && (
+            <>
+              {' · '}
+              <b>
+                {OFFICES[me.office.id].icon} {officeTitle(me.office, c)}
+              </b>
+            </>
+          )}
+        </div>
       </div>
       <div className="hq-kpis">
         <Stat icon="🤝" label="partinin güveni" value={n0(me.membership?.trust ?? 0)} tone={(me.membership?.trust ?? 0) >= CHALLENGE_TRUST ? 'good' : 'mid'} />
@@ -170,6 +269,7 @@ export function MemberView({ c, me, p, day, send }: { c: CountryState; me: Playe
         {tab === 'karargah' && (
           <div className="two-col">
             <div className="stack">
+              <OfficeCard c={c} me={me} p={p} day={day} send={send} onGoto={() => setTab('iller')} />
               <AdvisorPanel c={c} me={me} day={day} send={send} onGoto={(g) => setTab(g === 'iller' ? 'iller' : 'karargah')} />
               <MediaCard me={me} p={p} day={day} send={send} />
             </div>
