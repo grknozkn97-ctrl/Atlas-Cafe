@@ -7,7 +7,8 @@ import { quitParty } from './career';
 import { refreshOffers, stepOffice } from './offices';
 import { resetGovCalib } from './politics';
 import { addNews, calibrate, computeThreat, createCountry, militaryPower, stepDay } from './sim';
-import type { Character, CountryState, CountrySummary, ElectionResult, LocalElectionResult, Membership, Office, OfficeOffer } from './types';
+import { stepTown } from './town';
+import type { Character, CountryState, CountrySummary, ElectionResult, LocalElectionResult, Membership, Office, OfficeOffer, Town } from './types';
 
 export interface Player {
   id: string;
@@ -26,6 +27,7 @@ export interface Player {
   office?: Office | null;
   offers?: OfficeOffer[];
   stats?: { media: number };
+  town?: Town | null;
 }
 
 export interface World {
@@ -91,11 +93,12 @@ export function tickWorld(world: World, rng: Rng): ElectionNight[] {
     }
     c.pendingEvents = c.pendingEvents.filter((p) => p.deadlineDay > day);
 
-    if (isMonthStart) {
-      for (const pl of Object.values(world.players)) {
-        if (pl.countryId !== c.id) continue;
+    for (const pl of Object.values(world.players)) {
+      if (pl.countryId !== c.id) continue;
+      if (pl.town) stepTown(world, pl, rng, isMonthStart);
+      if (isMonthStart) {
         stepOffice(world, pl, rng);
-        refreshOffers(world, pl, rng);
+        if (!pl.town) refreshOffers(world, pl, rng);
       }
     }
     if (local) {
@@ -119,6 +122,7 @@ export function tickWorld(world: World, rng: Rng): ElectionNight[] {
 
 export function leaveCountry(world: World, player: Player) {
   quitParty(world, player);
+  player.town = null;
   player.countryId = null;
 }
 

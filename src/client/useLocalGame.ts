@@ -83,7 +83,9 @@ export function useLocalGame() {
     ...snapshot(),
   }));
 
-  const ready = !!world.players[PLAYER_ID]?.membership;
+  // Belediye kurulana kadar ve bir karar beklerken zaman akmaz.
+  const me = world.players[PLAYER_ID];
+  const ready = !!me?.membership && !!me.town && !me.town.event;
   const effective = ready ? speedMs : 0;
 
   useEffect(() => {

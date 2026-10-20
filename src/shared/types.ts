@@ -150,6 +150,77 @@ export interface LocalElectionResult {
   flips: number;
 }
 
+// ---------------------------------------------------------------- şehir (belediye) oyunu
+
+export type BuildingId = 'belediye' | 'konut' | 'carsi' | 'sanayi' | 'okul' | 'saglik' | 'park' | 'meydan' | 'basin' | 'parti' | 'emniyet';
+
+/** Çevre: oyuncunun tanıdıklarının geldiği kesimler */
+export type NetworkId = 'isDunyasi' | 'esnaf' | 'sendika' | 'akademi' | 'medya' | 'burokrasi' | 'parti';
+
+/** Kariyer basamakları */
+export type RankId = 'ilce' | 'il' | 'mv' | 'genelBaskan' | 'hukumet';
+
+export interface TownSlot {
+  building: BuildingId | null;
+  level: number;
+}
+
+export interface Contact {
+  id: string;
+  name: string;
+  title: string;
+  group: NetworkId;
+  avatar: Avatar;
+  /** 0-100; iyilik istedikçe azalır, zamanla yenilenir */
+  loyalty: number;
+  /** Bir sonraki iyiliğin istenebileceği gün */
+  readyDay: number;
+  sinceDay: number;
+}
+
+export interface TownEvent {
+  id: string;
+  defId: string;
+  title: string;
+  text: string;
+  icon: string;
+  options: { label: string; desc: string }[];
+  day: number;
+  deadline: number;
+}
+
+export interface Town {
+  id: string;
+  name: string;
+  countryId: string;
+  provinceId: string;
+  foundedDay: number;
+  slots: TownSlot[];
+  construction: { slot: number; building: BuildingId; toLevel: number; startDay: number; endDay: number } | null;
+  /** Belediye kasası (bin ₺) */
+  money: number;
+  /** İnşaat malzemesi (ton) */
+  materials: number;
+  pop: number;
+  /** Halkın memnuniyeti 0-100 */
+  happiness: number;
+  /** Siyasi nüfuz: eylemlerde ve adaylıkta harcanır */
+  influence: number;
+  tax: 'dusuk' | 'orta' | 'yuksek';
+  /** Her kesimde biriken ilişki puanı; eşikleri geçtikçe yeni tanıdıklar gelir */
+  network: Record<NetworkId, number>;
+  contacts: Contact[];
+  rank: RankId;
+  campaign: { rank: RankId; startDay: number; endDay: number; chance: number; boost: number } | null;
+  cooldowns: Record<string, number>;
+  event: TownEvent | null;
+  nextEventDay: number;
+  /** Gecikmeli sonuçlar (ör. rüşvet skandalı) */
+  later: { day: number; id: string }[];
+  log: { day: number; text: string; kind: 'iyi' | 'kotu' | 'notr' }[];
+  popHistory: number[];
+}
+
 export type MediaAction = 'tv' | 'radyo' | 'sosyalMedya' | 'sahaCalismasi' | 'mitingKonusmasi';
 
 export type PartyRole = 'uye' | 'ilBaskani' | 'myk' | 'genelBaskanYardimcisi' | 'genelBaskan';
@@ -508,6 +579,8 @@ export interface PlayerView {
   offers: OfficeOffer[];
   /** Görev hedefleri için sayaçlar */
   stats: { media: number };
+  /** Yönettiği belediye (şehir oyunu) */
+  town: Town | null;
 }
 
 /** İstemciden sunucuya giden mesajlar */
@@ -527,6 +600,16 @@ export type ClientMessage =
   | { type: 'leaveParty' }
   | { type: 'media'; action: MediaAction; regionId?: string }
   | { type: 'challengeLeader' }
+  | { type: 'foundTown'; provinceId: string; name: string }
+  | { type: 'townBuild'; slot: number; building: BuildingId }
+  | { type: 'townUpgrade'; slot: number }
+  | { type: 'townCancel' }
+  | { type: 'townAction'; building: BuildingId; action: string }
+  | { type: 'townTax'; tax: Town['tax'] }
+  | { type: 'townTrade'; tons: number }
+  | { type: 'townFavor'; contactId: string }
+  | { type: 'townEvent'; option: number }
+  | { type: 'runForOffice' }
   | { type: 'acceptOffer'; offerId: string }
   | { type: 'declineOffer'; offerId: string }
   | { type: 'resignOffice' }

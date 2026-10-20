@@ -11,6 +11,7 @@ import { ActionError, DIRECTIVES } from './sim';
 import type { ClientMessage } from './types';
 import { leaveCountry, type Player, type World } from './world';
 import { acceptOffer, declineOffer, endOffice } from './offices';
+import { askFavor, build, cancelConstruction, foundTown, resolveTownEvent, runForOffice, setTax, townAction, trade, upgrade } from './town';
 
 export { playerView } from './career';
 
@@ -46,6 +47,27 @@ export function dispatch(world: World, player: Player, msg: ClientMessage, rng: 
     case 'declineOffer':
       declineOffer(player, msg.offerId);
       return 'Teklifi geri çevirdin. Parti biraz kırıldı (güven −1).';
+    case 'foundTown':
+      return foundTown(world, player, msg.provinceId, msg.name);
+    case 'townBuild':
+      return build(world, player, msg.slot, msg.building);
+    case 'townUpgrade':
+      return upgrade(world, player, msg.slot);
+    case 'townCancel':
+      return cancelConstruction(player);
+    case 'townAction':
+      return townAction(world, player, msg.building, msg.action, rng);
+    case 'townTax':
+      setTax(player, msg.tax);
+      return;
+    case 'townTrade':
+      return trade(player, msg.tons);
+    case 'townFavor':
+      return askFavor(world, player, msg.contactId, rng);
+    case 'townEvent':
+      return resolveTownEvent(world, player, msg.option, rng);
+    case 'runForOffice':
+      return runForOffice(world, player, rng);
     case 'resignOffice':
       endOffice(world, player, player.character ? `${player.character.name} görevinden istifa etti.` : undefined);
       if (player.membership) player.membership.trust = Math.max(0, player.membership.trust - 3);

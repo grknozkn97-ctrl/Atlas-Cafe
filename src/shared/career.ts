@@ -83,12 +83,15 @@ export function joinAsMember(world: World, player: Player, countryId: string, pa
   const check = canJoin(p, ch, fame, hops);
   if (!check.ok) throw new ActionError(check.reason);
   quitParty(world, player);
-  if (player.countryId !== countryId) player.hops = 0;
+  if (player.countryId !== countryId) {
+    player.hops = 0;
+    player.town = null;
+  }
   player.countryId = countryId;
   player.membership = { partyId, trust: check.trust, joinedDay: world.day };
   addNews(c, world.day, `${ch.name} ${p.short} saflarına katıldı.`, 'notr');
   // Parti yeni üyesine hemen görev teklif eder.
-  refreshOffers(world, player, () => 0, true);
+  if (!player.town) refreshOffers(world, player, () => 0, true);
   return `${p.short} üyeliğin kabul edildi. Partinin sana güveni: ${check.trust}/100. Genel başkanlık için en az ${CHALLENGE_TRUST} güven gerekir.`;
 }
 
@@ -103,7 +106,10 @@ export function foundAsLeader(
   if (!c) throw new ActionError('Ülke bulunamadı.');
   const ch = requireCharacter(player);
   quitParty(world, player);
-  if (player.countryId !== countryId) player.hops = 0;
+  if (player.countryId !== countryId) {
+    player.hops = 0;
+    player.town = null;
+  }
   const p = foundParty(c, input, player.id, ch, world.day, rng);
   player.countryId = countryId;
   player.partyId = p.id;
@@ -230,5 +236,6 @@ export function playerView(p: Player | null | undefined): PlayerView | null {
     office: p.office ?? null,
     offers: p.offers ?? [],
     stats: p.stats ?? { media: 0 },
+    town: p.town ? structuredClone(p.town) : null,
   };
 }

@@ -240,7 +240,7 @@ export function refreshOffers(world: World, player: Player, rng: Rng, force = fa
 
 // ---------------------------------------------------------------- görev değişiklikleri
 
-function mayorFromPlayer(player: Player, pv: Province, partyId: string, day: number): Mayor {
+export function mayorFromPlayer(player: Player, pv: Province, partyId: string, day: number): Mayor {
   const ch = player.character!;
   return {
     id: `${MAYOR_PREFIX}${player.id}`,

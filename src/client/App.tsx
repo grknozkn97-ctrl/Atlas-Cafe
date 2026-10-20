@@ -19,6 +19,8 @@ import { OppositionView, PoliticsPanel } from './screens/Politics';
 import { AdvisorPanel } from './screens/Advisor';
 import { MemberView } from './screens/Member';
 import { ProvincesPanel } from './screens/Provinces';
+import { TownGame, TownPick } from './screens/Town';
+import { RANKS } from '../shared/town';
 import { ROLE_LABELS } from '../shared/career';
 import { Title } from './screens/Title';
 import { Avatar } from './ui/Avatar';
@@ -140,7 +142,7 @@ export function App() {
         connected={state.connected}
         player={player}
         country={c}
-        role={governing ? title : memberParty && player?.role ? `${memberParty.short} · ${ROLE_LABELS[player.role]}` : ''}
+        role={governing ? title : player?.town ? `${memberParty?.short ?? 'Bağımsız'} · ${RANKS[player.town.rank].label}` : memberParty && player?.role ? `${memberParty.short} · ${ROLE_LABELS[player.role]}` : ''}
         onLeave={() => {
           setBrowsing(null);
           send({ type: 'leaveCountry' });
@@ -174,13 +176,17 @@ export function App() {
       {state.localNight && !state.electionNight && (
         <LocalElectionNight countryName={state.localNight.countryName} result={state.localNight.result} c={c} player={player} onClose={clearElection} />
       )}
-      {DEMO && state.speedMs === 0 && !ceremony && !state.electionNight && !state.localNight && (
+      {DEMO && state.speedMs === 0 && player?.town && !player.town.event && !ceremony && !state.electionNight && !state.localNight && (
         <button className="start-time" onClick={() => setSpeed?.(SPEEDS[1].ms)}>
           ▶ Zamanı başlat
         </button>
       )}
       {c && player && governing ? (
         <Dashboard c={c} day={state.day} dayMs={state.dayMs} world={state.world} send={send} title={title} me={player} />
+      ) : c && player && !player.town ? (
+        <TownPick c={c} me={player} send={send} />
+      ) : c && player && player.town ? (
+        <TownGame c={c} me={player} day={state.day} dayMs={state.dayMs} send={send} />
       ) : c && player && myParty ? (
         <OppositionView c={c} p={myParty} me={player} day={state.day} dayMs={state.dayMs} send={send} />
       ) : c && player && memberParty ? (
