@@ -12,6 +12,10 @@ import { PeoplePanel } from './panels/PeoplePanel';
 import { ProjectsPanel } from './panels/ProjectsPanel';
 import { WorldPanel } from './panels/WorldPanel';
 import { useGame } from './useGame';
+import { SPEEDS, useLocalGame } from './useLocalGame';
+
+/** `vite build --mode demo`: sunucusuz, tek oyunculu deneme sürümü */
+const DEMO = import.meta.env.MODE === 'demo';
 
 export interface PanelProps {
   c: CountryState;
@@ -36,7 +40,7 @@ const TABS = [
 type TabId = (typeof TABS)[number]['id'];
 
 export function App() {
-  const { state, send, login, logout, clearGameOver, clearError } = useGame();
+  const { state, send, login, logout, clearGameOver, clearError, setSpeed } = DEMO ? useLocalGame() : useGame();
   const countryId = state.country?.id ?? null;
   useEffect(() => window.scrollTo(0, 0), [countryId]);
 
@@ -52,10 +56,10 @@ export function App() {
         connected={state.connected}
         playerName={state.playerName}
         country={state.country}
-        onLeave={() => {
-          if (confirmLeave()) send({ type: 'leaveCountry' });
-        }}
+        onLeave={() => send({ type: 'leaveCountry' })}
         onLogout={logout}
+        speedMs={state.speedMs}
+        onSpeed={setSpeed}
       />
       {state.error && (
         <div className="toast" onClick={clearError}>
@@ -85,12 +89,6 @@ export function App() {
   );
 }
 
-function confirmLeave() {
-  // Tarayıcı onay penceresi yerine basit bir çift tıklama koruması yeterli olurdu;
-  // ama ülkeyi bırakmak geri alınamaz, bu yüzden açıkça soruyoruz.
-  return window.confirm('Ülkenin yönetimini bırakmak istediğine emin misin? Ülke yapay zekâya geçer.');
-}
-
 function Login({ onLogin, error, connected }: { onLogin: (n: string) => void; error: string | null; connected: boolean }) {
   const [name, setName] = useState('');
   return (
@@ -104,12 +102,18 @@ function Login({ onLogin, error, connected }: { onLogin: (n: string) => void; er
       >
         <h1>🏛️ Devlet</h1>
         <p className="muted">Gerçek zamanlı ülke yönetim simülasyonu. Bir ülke seç, ekonomiyi yönet, seçimleri kazan.</p>
+        {DEMO && (
+          <p className="small muted">
+            Bu tek oyunculu deneme sürümü. Dünya senin tarayıcında işler; diğer ülkeleri yapay zekâ yönetir ve
+            oyun hızını üst çubuktan değiştirebilirsin.
+          </p>
+        )}
         <label>
           Oyuncu adın
           <input value={name} onChange={(e) => setName(e.target.value)} maxLength={24} autoFocus placeholder="Örn. Gürkan" />
         </label>
         <button className="primary" disabled={!connected || !name.trim()}>
-          {connected ? 'Oyuna gir' : 'Sunucuya bağlanılıyor…'}
+          {connected ? 'Oyuna başla' : 'Sunucuya bağlanılıyor…'}
         </button>
         {error && <p className="error">{error}</p>}
       </form>
@@ -126,13 +130,27 @@ function TopBar(props: {
   country: CountryState | null;
   onLeave: () => void;
   onLogout: () => void;
+  speedMs?: number;
+  onSpeed?: (ms: number) => void;
 }) {
   const [now, setNow] = useState(Date.now());
+  // Ülkeyi bırakmak geri alınamaz: ilk tıklama onay ister, ikincisi uygular.
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
+  useEffect(() => {
+    if (!confirmLeave && !confirmReset) return;
+    const t = setTimeout(() => {
+      setConfirmLeave(false);
+      setConfirmReset(false);
+    }, 4000);
+    return () => clearTimeout(t);
+  }, [confirmLeave, confirmReset]);
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(t);
   }, []);
-  const progress = Math.min(1, (now - props.lastTickAt) / props.dayMs);
+  const paused = props.speedMs === 0;
+  const progress = paused ? 0 : Math.min(1, (now - props.lastTickAt) / props.dayMs);
   return (
     <header className="topbar">
       <div className="brand">🏛️ Devlet</div>
@@ -151,14 +169,44 @@ function TopBar(props: {
       <div className="right">
         <span className={props.connected ? 'dot on' : 'dot'} title={props.connected ? 'Bağlı' : 'Bağlantı yok'} />
         <span className="small">{props.playerName}</span>
+        {props.onSpeed && (
+          <span className="speed" role="group" aria-label="Oyun hızı">
+            {SPEEDS.map((sp) => (
+              <button
+                key={sp.label}
+                className={`ghost small ${props.speedMs === sp.ms ? 'on' : ''}`}
+                onClick={() => props.onSpeed!(sp.ms)}
+              >
+                {sp.label}
+              </button>
+            ))}
+          </span>
+        )}
         {props.country && (
-          <button className="ghost small" onClick={props.onLeave}>
-            Ülkeyi bırak
+          <button
+            className={confirmLeave ? 'danger small' : 'ghost small'}
+            onClick={() => {
+              if (confirmLeave) {
+                setConfirmLeave(false);
+                props.onLeave();
+              } else setConfirmLeave(true);
+            }}
+          >
+            {confirmLeave ? 'Emin misin? Bırak' : 'Ülkeyi bırak'}
           </button>
         )}
-        <button className="ghost small" onClick={props.onLogout}>
-          Çıkış
-        </button>
+        {props.onSpeed ? (
+          <button
+            className={confirmReset ? 'danger small' : 'ghost small'}
+            onClick={() => (confirmReset ? props.onLogout() : setConfirmReset(true))}
+          >
+            {confirmReset ? 'Kayıt silinsin mi? Evet' : 'Yeniden başla'}
+          </button>
+        ) : (
+          <button className="ghost small" onClick={props.onLogout}>
+            Çıkış
+          </button>
+        )}
       </div>
     </header>
   );

@@ -31,6 +31,10 @@ export interface GameState {
   country: CountryState | null;
   error: string | null;
   gameOver: { countryName: string; reason: string } | null;
+  /** Tek oyunculu deneme modu (tarayıcıda simülasyon) */
+  offline?: boolean;
+  /** Deneme modunda oyun hızı; 0 = durdurulmuş */
+  speedMs?: number;
 }
 
 const initial: GameState = {
@@ -111,7 +115,7 @@ export function useGame() {
     setState((s) => ({ ...s, needsLogin: true, playerName: null, country: null }));
   }, []);
 
-  return { state, send, login, logout, clearGameOver, clearError };
+  return { state, send, login, logout, clearGameOver, clearError, setSpeed: undefined as ((ms: number) => void) | undefined };
 }
 
 function reduce(s: GameState, msg: ServerMessage): GameState {

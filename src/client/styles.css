@@ -16,7 +16,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --bg: #12151b;
     --surface: #1b2029;
     --surface-2: #232a35;
@@ -32,6 +32,22 @@
     color-scheme: dark;
   }
 }
+
+:root[data-theme='dark'] {
+    --bg: #12151b;
+    --surface: #1b2029;
+    --surface-2: #232a35;
+    --border: #2e3644;
+    --text: #e6e9ef;
+    --muted: #98a2b3;
+    --accent: #e03131;
+    --good: #51cf66;
+    --mid: #fcc419;
+    --bad: #ff6b6b;
+    --pos: #4dabf7;
+    --neg: #ff922b;
+    color-scheme: dark;
+  }
 
 * {
   box-sizing: border-box;
@@ -111,7 +127,7 @@ input[type='text'], input:not([type]), input[type='number'] {
 /* Üst çubuk */
 .topbar {
   position: sticky;
-  top: 0;
+  top: env(safe-area-inset-top, 0px);
   z-index: 5;
   display: flex;
   align-items: center;
@@ -318,3 +334,7 @@ tr.me { background: color-mix(in srgb, var(--accent) 10%, transparent); }
   .rival-row { grid-template-columns: 1fr 1fr; }
   .explain li { grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr) 48px; }
 }
+
+.speed { display: inline-flex; gap: 2px; border: 1px solid var(--border); border-radius: 8px; padding: 2px; }
+.speed button { border: none; }
+.speed button.on { background: var(--accent); color: var(--accent-text); }

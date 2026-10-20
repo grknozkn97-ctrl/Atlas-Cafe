@@ -46,6 +46,11 @@ Ortam değişkenleri:
 | `DATA_FILE` | `data/world.json` | Dünya kaydının yolu |
 | `SEED` | zamana göre | Rastgelelik tohumu |
 
+## Tek oyunculu deneme sürümü
+
+`npm run build:demo` sunucusuz bir sürüm üretir: simülasyon tarayıcıda çalışır, oyun hızı üst çubuktan
+ayarlanır ve ilerleme tarayıcıda saklanır.
+
 ## Diğer komutlar
 
 ```bash
