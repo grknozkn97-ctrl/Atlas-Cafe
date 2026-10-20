@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { CHALLENGE_TRUST, canJoin } from '../../shared/career';
 import { ideologyDistance } from '../../shared/politics';
-import type { Character, ClientMessage, CountrySummary, Ideology, PartySummary } from '../../shared/types';
+import type { ClientMessage, CountrySummary, Ideology, PartySummary, PlayerView } from '../../shared/types';
 import { pct } from '../format';
 import { Compass, PartyBadge, ideologyLabel } from '../ui/Widgets';
 
@@ -8,17 +9,18 @@ const COLORS = ['#d4a73c', '#e8590c', '#c2255c', '#7048e8', '#1c7ed6', '#0ca678'
 
 export function PartyChoice({
   c,
-  character,
+  me,
   send,
   onBack,
   onCeremony,
 }: {
   c: CountrySummary;
-  character: Character;
+  me: PlayerView;
   send: (m: ClientMessage) => void;
   onBack: () => void;
   onCeremony: (p: Pick<PartySummary, 'name' | 'short' | 'color'>, founded: boolean) => void;
 }) {
+  const character = me.character!;
   const [mode, setMode] = useState<'katil' | 'kur'>('katil');
   const [pick, setPick] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -39,8 +41,8 @@ export function PartyChoice({
           {c.flag} {c.name} siyasetinde yerini seç
         </h2>
         <p className="muted">
-          İktidar partileri kapalı: oraya ancak seçim kazanarak gelirsin. Büyük bir muhalefet partisini devralmak hızlı başlatır,
-          kendi partini kurmak zor ama tamamen senin olur.
+          Bir partiye üye olarak girersin: genel başkan olmak için önce partinin güvenini kazanman, sonra kurultayı kazanman gerekir.
+          Parti seni görüşlerine ve tanınırlığına göre kabul eder. Kendi partini kurarsan ilk günden genel başkansın ama sıfırdan başlarsın.
         </p>
         <div className="seg">
           <button className={mode === 'katil' ? 'on' : ''} onClick={() => setMode('katil')}>
@@ -55,7 +57,8 @@ export function PartyChoice({
       {mode === 'katil' ? (
         <div className="party-grid">
           {parties.map((p) => {
-            const locked = p.inGovernment || (!!p.playerId && p.playerId !== null);
+            const check = canJoin(p, character, me.fame, me.hops);
+            const locked = !check.ok;
             const f = fit(p);
             return (
               <button key={p.id} className={`party-card ${pick === p.id ? 'on' : ''}`} disabled={locked} onClick={() => setPick(p.id)} style={{ borderTopColor: p.color }}>
@@ -79,27 +82,26 @@ export function PartyChoice({
                     <span className={`big-num ${f > 70 ? 'good' : f > 45 ? '' : 'bad'}`}>{f}</span>
                     <span className="small muted">uyum</span>
                   </div>
+                  <div>
+                    <span className={`big-num ${check.trust >= 40 ? 'good' : check.trust >= 20 ? '' : 'bad'}`}>{check.ok ? check.trust : '—'}</span>
+                    <span className="small muted">güven</span>
+                  </div>
                 </div>
                 <div className="small muted">Genel başkan: {p.leaderName}</div>
-                {p.inGovernment && <div className="lock">🔒 İktidarda</div>}
-                {p.playerId && !p.inGovernment && <div className="lock">🔒 Başka bir oyuncunun</div>}
+                {p.inGovernment && <div className="lock">🏛️ İktidarda</div>}
+                {locked && <div className="lock-reason small">🔒 {check.reason}</div>}
               </button>
             );
           })}
           {chosen && (
             <div className="join-bar card">
               <div>
-                <b>{chosen.short}</b> olağanüstü kurultayına aday ol. Delegelerin desteği karizmana bağlı.
-                {fit(chosen) < 45 && <div className="small bad">Partinin çizgisi seninkinden çok uzak; tabanda zorlanabilirsin.</div>}
+                <b>{chosen.short}</b> seni üye olarak kabul ediyor. Başlangıç güvenin{' '}
+                <b>{canJoin(chosen, character, me.fame, me.hops).trust}/100</b>; genel başkanlık yarışı için {CHALLENGE_TRUST} gerekir.
+                {chosen.inGovernment && <div className="small muted">İktidar partisinde kurultay seçim öncesi açılmaz; yükselmek daha uzun sürer.</div>}
               </div>
-              <button
-                className="primary big"
-                onClick={() => {
-                  onCeremony(chosen, false);
-                  send({ type: 'joinParty', countryId: c.id, partyId: chosen.id });
-                }}
-              >
-                Kurultaya gir →
+              <button className="primary big" onClick={() => send({ type: 'joinParty', countryId: c.id, partyId: chosen.id })}>
+                Üye ol →
               </button>
             </div>
           )}

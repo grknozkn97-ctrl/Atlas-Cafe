@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { MINISTRIES, MINISTRY_LABELS, formatGameDate } from '../../shared/constants';
-import { ministerScore } from '../../shared/ministers';
+import { describeSwap, ministerSwapEstimate } from '../../shared/advisor';
 import { ACTION_COOLDOWNS, ACTION_COSTS, MAX_PROMISES, PROMISES, regionFit, topIssue } from '../../shared/politics';
-import type { ClientMessage, CountryState, Party, PromiseId } from '../../shared/types';
+import type { ClientMessage, CountryState, Minister, MinistryId, Party, PlayerView, PromiseId } from '../../shared/types';
 import { n0, n1, pct, realDuration } from '../format';
 import { Hemicycle } from '../ui/Hemicycle';
+import { MinisterProfile, PersonCard } from '../ui/MinisterProfile';
 import { RegionMap } from '../ui/RegionMap';
 import { Gauge, Meter, PartyBadge, PollChart, Stat } from '../ui/Widgets';
 import type { PanelProps } from '../App';
+import { AdvisorPanel } from './Advisor';
+import { CareerCard, MediaCard } from './Member';
+import { ProvincesPanel } from './Provinces';
 
 type Send = (m: ClientMessage) => void;
 
@@ -166,33 +170,58 @@ export function PromisesCard({ p, send }: { p: Party; send: Send }) {
 
 export function ShadowCard({ c, p, send }: { c: CountryState; p: Party; send: Send }) {
   const filled = MINISTRIES.filter((m) => p.shadowCabinet[m]).length;
+  const [open, setOpen] = useState<MinistryId | null>(null);
+  const [profile, setProfile] = useState<{ m: Minister; ministry: MinistryId } | null>(null);
   return (
     <section className="card">
       <h3>👥 Gölge kabine ({filled}/{MINISTRIES.length})</h3>
-      <p className="small muted">İktidara gelince bu isimler bakan olarak yemin eder. Boş bıraktığın bakanlıklarda mevcut bakan görevine devam eder.</p>
+      <p className="small muted">İktidara gelince bu isimler bakan olarak yemin eder. Bir isme dokun: geçmişini, özelliklerini ve bakan olursa ne değişeceğini gör.</p>
       <div className="shadow-list">
         {MINISTRIES.map((m) => {
           const cur = p.shadowCabinet[m];
           return (
-            <div key={m} className="shadow-row">
-              <span className="sr-min">{MINISTRY_LABELS[m]}</span>
-              <select
-                value={cur?.id ?? ''}
-                onChange={(e) => send({ type: 'setShadow', ministry: m, candidateId: e.target.value || null })}
-              >
-                <option value="">Boş</option>
-                {cur && !c.candidates[m].some((x) => x.id === cur.id) && <option value={cur.id}>{cur.name}</option>}
-                {c.candidates[m].map((cand) => (
-                  <option key={cand.id} value={cand.id}>
-                    {cand.name} · puan {Math.round(ministerScore(cand) * 100)}
-                  </option>
-                ))}
-              </select>
-              {cur && <Meter value={ministerScore(cur) * 100} color="var(--good)" />}
+            <div key={m} className="shadow-slot">
+              <div className="slider-head small">
+                <span className="sr-min">{MINISTRY_LABELS[m]}</span>
+                <button className="ghost small" onClick={() => setOpen(open === m ? null : m)}>
+                  {cur ? 'Değiştir' : 'Aday seç'} ({c.candidates[m].length})
+                </button>
+              </div>
+              {cur ? (
+                <PersonCard m={cur} ring={p.color} onClick={() => setProfile({ m: cur, ministry: m })} />
+              ) : (
+                <span className="small muted">Boş</span>
+              )}
+              {open === m && (
+                <div className="pool">
+                  {c.candidates[m].map((cand) => (
+                    <PersonCard key={cand.id} m={cand} compare={cur} onClick={() => setProfile({ m: cand, ministry: m })} />
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
       </div>
+      {profile && (
+        <MinisterProfile
+          m={profile.m}
+          role={`${MINISTRY_LABELS[profile.ministry]} Bakanlığı ${p.shadowCabinet[profile.ministry]?.id === profile.m.id ? 'gölge bakanı' : 'adayı'}`}
+          compare={p.shadowCabinet[profile.ministry]?.id === profile.m.id ? null : p.shadowCabinet[profile.ministry]}
+          estimate={`Bugünkü bakan yerine o olsaydı, uzun vadede ${describeSwap(ministerSwapEstimate(c, profile.ministry, profile.m))}.`}
+          onClose={() => setProfile(null)}
+        >
+          {p.shadowCabinet[profile.ministry]?.id === profile.m.id ? (
+            <button className="ghost" onClick={() => { send({ type: 'setShadow', ministry: profile.ministry, candidateId: null }); setProfile(null); }}>
+              Gölge kabineden çıkar
+            </button>
+          ) : (
+            <button className="primary" onClick={() => { send({ type: 'setShadow', ministry: profile.ministry, candidateId: profile.m.id }); setProfile(null); setOpen(null); }}>
+              Gölge bakan yap
+            </button>
+          )}
+        </MinisterProfile>
+      )}
     </section>
   );
 }
@@ -224,7 +253,7 @@ export function PollsCard({ c, p }: { c: CountryState; p: Party | null }) {
   );
 }
 
-function GovWatch({ c }: { c: CountryState }) {
+export function GovWatch({ c }: { c: CountryState }) {
   const tone = (v: number, good: number, mid: number, lowerBetter = true) =>
     lowerBetter ? (v <= good ? 'good' : v <= mid ? 'mid' : 'bad') : v >= good ? 'good' : v >= mid ? 'mid' : 'bad';
   const issue = topIssue(c);
@@ -247,7 +276,7 @@ function GovWatch({ c }: { c: CountryState }) {
   );
 }
 
-function News({ c }: { c: CountryState }) {
+export function News({ c }: { c: CountryState }) {
   return (
     <section className="card">
       <h3>📰 Haberler</h3>
@@ -264,14 +293,16 @@ function News({ c }: { c: CountryState }) {
 
 const OPP_TABS = [
   { id: 'karargah', label: '🏠 Karargâh' },
+  { id: 'iller', label: '🏙️ İller' },
   { id: 'anket', label: '📊 Anket ve Meclis' },
   { id: 'program', label: '📜 Vaatler ve Kadro' },
   { id: 'ulke', label: '🔎 Ülke Gündemi' },
 ] as const;
 
-/** Muhalefetteyken oyuncunun ekranı. */
-export function OppositionView({ c, p, day, dayMs, send }: { c: CountryState; p: Party; day: number; dayMs: number; send: Send }) {
+/** Muhalefet partisinin genel başkanıyken oyuncunun ekranı. */
+export function OppositionView({ c, p, me, day, dayMs, send }: { c: CountryState; p: Party; me: PlayerView; day: number; dayMs: number; send: Send }) {
   const [tab, setTab] = useState<(typeof OPP_TABS)[number]['id']>('karargah');
+  const goto = (g: string) => setTab(g === 'iller' ? 'iller' : g === 'parti' ? 'program' : 'karargah');
   return (
     <div className="dashboard">
       <PartyHeader c={c} p={p} day={day} dayMs={dayMs} />
@@ -285,13 +316,19 @@ export function OppositionView({ c, p, day, dayMs, send }: { c: CountryState; p:
       <main className="panel">
         {tab === 'karargah' && (
           <div className="two-col">
-            <RegionsCard c={c} p={p} day={day} send={send} />
+            <div className="stack">
+              <AdvisorPanel c={c} me={me} day={day} send={send} onGoto={goto} />
+              <RegionsCard c={c} p={p} day={day} send={send} />
+            </div>
             <div className="stack">
               <ActionsCard c={c} p={p} day={day} send={send} />
+              <MediaCard me={me} p={p} day={day} send={send} />
+              <CareerCard c={c} me={me} p={p} day={day} send={send} />
               <News c={c} />
             </div>
           </div>
         )}
+        {tab === 'iller' && <ProvincesPanel c={c} me={me} day={day} send={send} governing={false} />}
         {tab === 'anket' && <PollsCard c={c} p={p} />}
         {tab === 'program' && (
           <div className="two-col">

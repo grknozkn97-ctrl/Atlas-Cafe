@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { handleAction } from './actions';
-import { dispatch } from './dispatch';
+import { dispatch, playerView } from './dispatch';
 import { createRng } from './ministers';
 import { stepProvinces } from './local';
+import { advise, ministerSwapEstimate } from './advisor';
 import {
   inflationTarget,
   raiseMinWage,
@@ -264,4 +265,21 @@ test('dünya 20 yıl boyunca sayısal olarak kararlı kalır', () => {
     assert.ok(c.inflation < 100, `${c.name} enflasyon ${c.inflation}`);
     assert.ok(c.approval >= 0 && c.approval <= 100);
   }
+});
+
+test('danışman üyeye güven kazandıracak işleri, iktidara bakan değişikliğini tahminle önerir', () => {
+  const world = createWorld(createRng(21));
+  const player = newPlayer(world);
+  const c = world.countries.tr;
+  const rng = createRng(22);
+  dispatch(world, player, { type: 'joinParty', countryId: 'tr', partyId: c.parties.find((p) => p.short === 'CHP')!.id }, rng);
+  const tips = advise(c, playerView(player)!, world.day);
+  assert.ok(tips.length >= 3);
+  assert.equal(tips[0].action?.type, 'media');
+  assert.match(tips.find((t) => t.id === 'media:sahaCalismasi')!.estimate, /güveni \+4/);
+  // Bakan tahmini: çok yetkin aday onayı artırır.
+  const cand = { ...c.candidates.saglik[0], competence: 1, popularity: 0.9, integrity: 1 };
+  const weak = { ...c.ministers.saglik!, competence: 0.1 };
+  const cc = { ...c, ministers: { ...c.ministers, saglik: weak } };
+  assert.ok(ministerSwapEstimate(cc, 'saglik', cand).approval > 0);
 });

@@ -10,7 +10,7 @@ import type { ClientMessage } from '../shared/types';
 import { createWorld, summarize, tickWorld, type World } from '../shared/world';
 import type { GameState } from './useGame';
 
-const SAVE_KEY = 'devlet.demo.v2';
+const SAVE_KEY = 'devlet.demo.v3';
 
 export const SPEEDS = [
   { label: 'Durdur', icon: '⏸', ms: 0 },
@@ -29,7 +29,7 @@ function load(): Saved | null {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
     const s = JSON.parse(raw) as Saved;
-    return s.world?.version === 2 ? s : null;
+    return s.world?.version === 3 ? s : null;
   } catch {
     return null;
   }

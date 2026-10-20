@@ -25,7 +25,7 @@ export interface Player {
 }
 
 export interface World {
-  version: 2;
+  version: 3;
   day: number;
   countries: Record<string, CountryState>;
   players: Record<string, Player>;
@@ -42,7 +42,7 @@ export interface ElectionNight {
 export function createWorld(rng: Rng): World {
   const countries: Record<string, CountryState> = {};
   for (const seed of COUNTRY_SEEDS) countries[seed.id] = createCountry(seed, rng);
-  const world: World = { version: 2, day: 0, countries, players: {} };
+  const world: World = { version: 3, day: 0, countries, players: {} };
   const ctx = { powers: worldPowers(world) };
   for (const c of Object.values(countries)) {
     c.threat = computeThreat(c, ctx);

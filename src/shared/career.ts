@@ -30,7 +30,7 @@ export function roleOf(p: Pick<Player, 'membership' | 'partyId'>): PartyRole | n
   if (!p.membership) return null;
   if (p.partyId === p.membership.partyId) return 'genelBaskan';
   const t = p.membership.trust;
-  return t < 30 ? 'uye' : t < 55 ? 'ilBaskani' : t < 75 ? 'myk' : 'genelBaskanYardimcisi';
+  return t < 40 ? 'uye' : t < 60 ? 'ilBaskani' : t < 80 ? 'myk' : 'genelBaskanYardimcisi';
 }
 
 export const CHALLENGE_TRUST = 60;
@@ -38,7 +38,7 @@ export const CHALLENGE_TRUST = 60;
 /** Partinin seni üyeliğe kabul ederken duyacağı güven (0-100). */
 export function initialTrust(p: Pick<Party, 'ideology' | 'support'>, ch: Character, fame: number, hops: number) {
   const fit = 1 - ideologyDistance(p.ideology, ch.ideology);
-  return Math.round(clamp(fit * 40 + fame * 0.3 - hops * 8 - Math.max(0, p.support - 20) * 0.3, 0, 60));
+  return Math.round(clamp(fit * 40 + fame * 0.3 - hops * 8 - Math.max(0, p.support - 20) * 0.3, 0, 38));
 }
 
 export function canJoin(p: Pick<Party, 'ideology' | 'support'>, ch: Character, fame: number, hops: number) {
@@ -218,5 +218,6 @@ export function playerView(p: Player | null | undefined): PlayerView | null {
     role: roleOf(p),
     fame: p.fame ?? 0,
     cooldowns: p.cooldowns ?? {},
+    hops: p.hops ?? 0,
   };
 }

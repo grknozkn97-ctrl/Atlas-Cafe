@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { CountryState, ElectionResult, PartySummary, PlayerView } from '../../shared/types';
+import type { CountryState, ElectionResult, LocalElectionResult, PartySummary, PlayerView } from '../../shared/types';
 import { pct } from '../format';
 import { Avatar } from '../ui/Avatar';
 import { Hemicycle } from '../ui/Hemicycle';
@@ -90,15 +90,18 @@ export function ElectionNight({
   }, []);
   const party = (id: string) => c?.parties.find((p) => p.id === id);
   const winner = party(result.winnerPartyId);
-  const mine = player?.partyId ?? null;
+  const mine = player?.membership?.partyId ?? player?.partyId ?? null;
   const iWon = mine && result.coalition.includes(mine);
-  const iLed = mine === result.winnerPartyId;
+  const iLed = !!player?.partyId && player.partyId === result.winnerPartyId;
+  const partyLed = mine === result.winnerPartyId;
   const myResult = result.results.find((r) => r.partyId === mine);
   const headline = iLed
     ? result.won
       ? 'Yeniden seçildin!'
       : 'Kazandın! Hükümeti sen kuruyorsun'
-    : iWon
+    : partyLed
+      ? 'Partin iktidarda!'
+      : iWon
       ? 'Partin koalisyonda yer aldı'
       : 'Muhalefette mücadele sürüyor';
   const max = Math.max(...result.results.map((r) => r.vote));
@@ -137,6 +140,66 @@ export function ElectionNight({
         {myResult && !iLed && (
           <p className="small muted">
             Partin %{myResult.vote.toFixed(1)} oy aldı{myResult.seats ? ` ve meclise %${myResult.seats.toFixed(1)} sandalyeyle girdi` : ', barajın altında kaldı'}.
+          </p>
+        )}
+        <button className="primary big" onClick={onClose}>
+          Devam
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Yerel seçim gecesi: hangi parti kaç il kazandı. */
+export function LocalElectionNight({
+  countryName,
+  result,
+  c,
+  player,
+  onClose,
+}: {
+  countryName: string;
+  result: LocalElectionResult;
+  c: CountryState | null;
+  player: PlayerView | null;
+  onClose: () => void;
+}) {
+  const [go, setGo] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setGo(true), 80);
+    return () => clearTimeout(t);
+  }, []);
+  const party = (id: string) => c?.parties.find((p) => p.id === id);
+  const mine = player?.membership?.partyId ?? null;
+  const my = result.tally.find((t) => t.partyId === mine);
+  const total = result.tally.reduce((s, t) => s + t.provinces, 0) || 1;
+  const won = (c?.provinces ?? []).filter((pv) => pv.mayor.partyId === mine && pv.mayor.sinceDay === result.day).sort((a, b) => b.pop - a.pop);
+  return (
+    <div className="modal-bg">
+      <div className={`modal election ${my && my.provinces > 0 ? 'win' : ''}`}>
+        <div className="title-kicker">🏙️ Yerel seçim gecesi · {countryName}</div>
+        <h2>{my?.provinces ? `Partin ${my.provinces} ilde belediye başkanlığını kazandı` : 'Partin bu seçimde il kazanamadı'}</h2>
+        <div className="results">
+          {result.tally.slice(0, 8).map((t) => {
+            const p = party(t.partyId);
+            if (!p) return null;
+            return (
+              <div key={t.partyId} className={`res-row ${t.partyId === mine ? 'me' : ''}`}>
+                <PartyBadge p={p} size={30} />
+                <span className="res-name">{p.short}</span>
+                <span className="res-bar">
+                  <span style={{ width: go ? `${(t.provinces / total) * 100}%` : 0, background: p.color }} />
+                </span>
+                <span className="res-num">{t.provinces} il</span>
+              </div>
+            );
+          })}
+        </div>
+        <p className="small">{result.flips} belediye el değiştirdi.</p>
+        {won.length > 0 && (
+          <p className="small">
+            Yeni belediyelerin: <b>{won.slice(0, 8).map((pv) => pv.name).join(', ')}</b>
+            {won.length > 8 ? ` ve ${won.length - 8} il daha` : ''}. Genel başkansan bu illerin bütçesini ve projelerini İller sekmesinden yönetebilirsin.
           </p>
         )}
         <button className="primary big" onClick={onClose}>

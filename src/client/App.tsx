@@ -13,9 +13,13 @@ import { ProjectsPanel } from './panels/ProjectsPanel';
 import { WorldPanel } from './panels/WorldPanel';
 import { CharacterCreator } from './screens/CharacterCreator';
 import { CountrySelect } from './screens/CountrySelect';
-import { Ceremony, ElectionNight } from './screens/Overlays';
+import { Ceremony, ElectionNight, LocalElectionNight } from './screens/Overlays';
 import { PartyChoice } from './screens/PartyChoice';
 import { OppositionView, PoliticsPanel } from './screens/Politics';
+import { AdvisorPanel } from './screens/Advisor';
+import { MemberView } from './screens/Member';
+import { ProvincesPanel } from './screens/Provinces';
+import { ROLE_LABELS } from '../shared/career';
 import { Title } from './screens/Title';
 import { Avatar } from './ui/Avatar';
 import { Gauge, PartyBadge } from './ui/Widgets';
@@ -31,12 +35,18 @@ export interface PanelProps {
   dayMs: number;
   world: CountrySummary[];
   send: (m: ClientMessage) => void;
+  me: PlayerView;
+}
+
+function ProvincesTab(props: PanelProps) {
+  return <ProvincesPanel c={props.c} me={props.me} day={props.day} send={props.send} governing />;
 }
 
 const TABS = [
   { id: 'genel', label: '🏛️ Genel Bakış', Comp: OverviewPanel },
   { id: 'ekonomi', label: '💹 Ekonomi', Comp: EconomyPanel },
   { id: 'butce', label: '🧾 Bütçe', Comp: BudgetPanel },
+  { id: 'iller', label: '🏙️ İller', Comp: ProvincesTab },
   { id: 'projeler', label: '🏗️ Yatırımlar', Comp: ProjectsPanel },
   { id: 'bakanlar', label: '👥 Kabine', Comp: MinistersPanel },
   { id: 'halk', label: '🗳️ Halk ve Seçim', Comp: PeoplePanel },
@@ -58,16 +68,26 @@ export function App() {
       ? 'title'
       : !player?.character
         ? 'creator'
-        : !player.partyId
+        : !player.membership
           ? browsing
             ? 'party'
             : 'select'
           : 'game';
   useEffect(() => window.scrollTo(0, 0), [screen, browsing]);
+  // Kurultay kazanılınca tören göster.
+  const [prevLead, setPrevLead] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    const lead = player?.partyId ?? null;
+    if (prevLead === null && lead && player?.membership && state.country && !ceremony) {
+      const p = state.country.parties.find((x) => x.id === lead);
+      if (p && !p.founded) setCeremony({ party: p, founded: false });
+    }
+    setPrevLead(lead);
+  }, [player?.partyId]);
   // Hata olursa (ör. parti adı alınmış) tören penceresini kapat.
   useEffect(() => {
-    if (state.error && ceremony && !player?.partyId) setCeremony(null);
-  }, [state.error, ceremony, player?.partyId]);
+    if (state.error && ceremony && !player?.membership) setCeremony(null);
+  }, [state.error, ceremony, player?.membership]);
 
   const toast = (state.error || (state.notice && !ceremony)) && (
     <div className={`toast ${state.error ? 'err' : ''}`} onClick={clearError} role="status">
@@ -94,7 +114,7 @@ export function App() {
         {screen === 'party' && c && player?.character ? (
           <PartyChoice
             c={c}
-            character={player.character}
+            me={player}
             send={send}
             onBack={() => setBrowsing(null)}
             onCeremony={(party, founded) => setCeremony({ party, founded })}
@@ -108,6 +128,7 @@ export function App() {
 
   const c = state.country;
   const myParty = c?.parties.find((p) => p.id === player?.partyId) ?? null;
+  const memberParty = c?.parties.find((p) => p.id === player?.membership?.partyId) ?? null;
   const governing = !!c && c.ownerId === player?.id;
   const title = c && c.regime === 'parlamenter' ? 'Başbakan' : 'Devlet başkanı';
   return (
@@ -119,7 +140,7 @@ export function App() {
         connected={state.connected}
         player={player}
         country={c}
-        role={governing ? title : myParty ? `${myParty.short} genel başkanı` : ''}
+        role={governing ? title : memberParty && player?.role ? `${memberParty.short} · ${ROLE_LABELS[player.role]}` : ''}
         onLeave={() => {
           setBrowsing(null);
           send({ type: 'leaveCountry' });
@@ -150,15 +171,20 @@ export function App() {
           onClose={clearElection}
         />
       )}
-      {DEMO && state.speedMs === 0 && !ceremony && !state.electionNight && (
+      {state.localNight && !state.electionNight && (
+        <LocalElectionNight countryName={state.localNight.countryName} result={state.localNight.result} c={c} player={player} onClose={clearElection} />
+      )}
+      {DEMO && state.speedMs === 0 && !ceremony && !state.electionNight && !state.localNight && (
         <button className="start-time" onClick={() => setSpeed?.(SPEEDS[1].ms)}>
           ▶ Zamanı başlat
         </button>
       )}
-      {c && governing ? (
-        <Dashboard c={c} day={state.day} dayMs={state.dayMs} world={state.world} send={send} title={title} />
-      ) : c && myParty ? (
-        <OppositionView c={c} p={myParty} day={state.day} dayMs={state.dayMs} send={send} />
+      {c && player && governing ? (
+        <Dashboard c={c} day={state.day} dayMs={state.dayMs} world={state.world} send={send} title={title} me={player} />
+      ) : c && player && myParty ? (
+        <OppositionView c={c} p={myParty} me={player} day={state.day} dayMs={state.dayMs} send={send} />
+      ) : c && player && memberParty ? (
+        <MemberView c={c} p={memberParty} me={player} day={state.day} send={send} />
       ) : (
         <div className="center muted">Yükleniyor…</div>
       )}
@@ -320,6 +346,16 @@ function Dashboard(props: PanelProps & { title: string }) {
           <div className="alert" onClick={() => setTab('olaylar')}>
             ⚠️ {pending} konu kararını bekliyor. Karar vermezsen otomatik pilot varsayılan seçeneği uygular.
           </div>
+        )}
+        {tab === 'genel' && (
+          <AdvisorPanel
+            c={props.c}
+            me={props.me}
+            day={props.day}
+            send={props.send}
+            onGoto={(g) => setTab(g === 'iller' ? 'iller' : g === 'kabine' ? 'bakanlar' : g === 'ekonomi' ? 'ekonomi' : g === 'kampanya' ? 'halk' : 'siyaset')}
+            limit={3}
+          />
         )}
         <Active {...props} />
       </main>

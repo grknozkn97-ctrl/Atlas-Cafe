@@ -92,7 +92,8 @@ export function generateMinister(rng: Rng, names: 'tr' | 'genel', quality = 0, m
   const age = Math.round(36 + rng() * 32);
   const profession = pick(rng, (ministry && PROFESSIONS[ministry]) || GENERIC_PROF);
   const name = `${pick(rng, first)} ${pick(rng, last)}`;
-  const bio = `${age} yaşında. ${profession}. ${traits.length ? traits.map((t) => TRAITS[t].label.toLocaleLowerCase('tr')).join(', ') + ' biri olarak bilinir.' : 'Sessiz sedasız çalışan biri.'}`;
+  const known = traits.map((t) => TRAITS[t].label.toLocaleLowerCase('tr')).join(', ');
+  const bio = `${profession}. ${known ? known.charAt(0).toLocaleUpperCase('tr') + known.slice(1) + ' biri olarak bilinir.' : 'Sessiz sedasız çalışan biri.'}`;
   return {
     id: `m${Date.now().toString(36)}${counter.toString(36)}${Math.floor(rng() * 1e6).toString(36)}`,
     name,

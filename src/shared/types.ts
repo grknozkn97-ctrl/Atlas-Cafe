@@ -137,6 +137,8 @@ export interface Province {
   popHistory: number[];
   houseHistory: number[];
   lastVote: { partyId: string; vote: number }[] | null;
+  /** Yerel parti sadakati (kale iller): partyId -> oy çarpanı */
+  bias?: Record<string, number>;
 }
 
 export interface LocalElectionResult {
@@ -463,6 +465,8 @@ export interface PlayerView {
   /** Kamuoyunda tanınırlık 0-100 */
   fame: number;
   cooldowns: Record<string, number>;
+  /** Kaç kez parti değiştirdi (güveni düşürür) */
+  hops: number;
 }
 
 /** İstemciden sunucuya giden mesajlar */

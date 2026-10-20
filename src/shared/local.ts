@@ -46,7 +46,7 @@ export function gdpPc(c: CountryState) {
 }
 
 export function projectCost(c: CountryState, pv: Province, type: MunicipalProjectType) {
-  return Math.round(MUNICIPAL_PROJECTS[type].cost * Math.max(0.15, pv.pop) * gdpPc(c) * 10) / 10;
+  return Math.round(MUNICIPAL_PROJECTS[type].cost * Math.max(0.15, pv.pop) * gdpPc(c) * 25) / 10;
 }
 
 /** Belediyenin aylık geliri (milyon $) */
@@ -153,7 +153,14 @@ export function initProvinces(c: CountryState, rng: Rng) {
   for (const pv of c.provinces) {
     refillPool(c, pv, rng);
     settle(c, pv);
-    pv.funds = Math.round(municipalRevenue(c, pv) * 0.2 * 4);
+    // Başlangıçtaki belediye partisi o ilde gerçekten önde olsun: yerel sadakat çarpanı.
+    if (c.playable) {
+      const poll = localPoll(c, pv, undefined, true);
+      const top = poll[0];
+      const own = poll.find((r) => r.partyId === pv.mayor.partyId);
+      if (top && own) pv.bias = { [pv.mayor.partyId]: Math.min(6, Math.max(1.15, (top.vote / Math.max(1, own.vote)) * 1.3)) };
+    }
+    pv.funds = Math.round(municipalRevenue(c, pv) * 0.3 * 8);
   }
   // Yerel seçim takvimi
   if (!c.playable) c.nextLocalElectionDay = Number.MAX_SAFE_INTEGER;
@@ -216,14 +223,15 @@ export function stepProvinces(c: CountryState, day: number, rng: Rng) {
       pv.built[pr.type] += 1;
       if (pr.type === 'topluKonut') pv.houses += Math.round(households(pv) * 0.03);
       if (pr.type === 'kentselDonusum') pv.houses += Math.round(households(pv) * 0.02);
-      addNews(c, day, `${pv.name}: ${MUNICIPAL_PROJECTS[pr.type].label} tamamlandı.`, 'iyi');
+      // Haber akışını boğmamak için yalnızca büyük şehirler, devlet yatırımları ve oyuncu belediyeleri.
+      if (pr.byState || pv.pop >= 2 || isPlayerMunicipality(c, pv)) addNews(c, day, `${pv.name}: ${MUNICIPAL_PROJECTS[pr.type].label} tamamlandı.`, 'iyi');
     }
     pv.projects = pv.projects.filter((p) => p.endDay > day);
 
-    // Gelir: %80 hizmete, %20 kasaya
+    // Gelir: %70 hizmete, %30 yatırım kasasına
     const rev = municipalRevenue(c, pv);
-    pv.funds += rev * 0.2;
-    pv.houses += Math.round((rev * 0.8 * (pv.alloc.konut / 100)) / Math.max(0.01, houseCost) * 0.5);
+    pv.funds += rev * 0.3;
+    pv.houses += Math.round((rev * 0.7 * (pv.alloc.konut / 100)) / Math.max(0.01, houseCost) * 0.5);
 
     // Piyasanın konut üretimi
     const need = households(pv) * 1.08;
@@ -259,6 +267,7 @@ function aiProject(c: CountryState, pv: Province, day: number) {
   const want: MunicipalProjectType =
     housingRatio(pv) < 1.04 ? 'topluKonut' : pv.jobs < 45 ? 'sanayi' : pv.pop >= 1 && pv.built.metro === 0 ? 'metro' : 'park';
   const cost = projectCost(c, pv, want);
+  if (want === 'park' && pv.built.park >= 4) return;
   if (pv.funds >= cost) {
     pv.funds -= cost;
     pv.projects.push({ type: want, endDay: day + MUNICIPAL_PROJECTS[want].months * 30, byState: false });
@@ -273,7 +282,7 @@ export function isPlayerMunicipality(c: CountryState, pv: Province) {
 // ---------------------------------------------------------------- yerel seçim
 
 function fit(p: Party, pv: Province) {
-  return clamp(1.5 - ideologyDistance(p.ideology, pv.lean) * 2.5, 0.1, 2);
+  return clamp(1.3 - ideologyDistance(p.ideology, pv.lean) * 1.6, 0.25, 1.6);
 }
 
 /** Bir partinin o ildeki adayı: oyuncu partisi sadece aday gösterdiği yerde yarışır. */
@@ -294,7 +303,7 @@ export function localPoll(c: CountryState, pv: Province, rng?: Rng, initial = fa
     const cand = candidateOf(pv, p);
     if (p.playerId && !cand) continue;
     if (!p.playerId && p.support < 1.5 && !cand) continue;
-    let score = Math.max(0.1, p.support) * fit(p, pv);
+    let score = Math.max(0.1, p.support) * fit(p, pv) * (pv.bias?.[p.id] ?? 1);
     if (cand) score *= 1 + (cand.popularity - 0.5) * 0.8;
     if (!initial && pv.mayor?.partyId === p.id) score *= 1 + (pv.mayor.approval - 50) / 80;
     if (rng) score *= 1 + (rng() - 0.5) * 0.3;

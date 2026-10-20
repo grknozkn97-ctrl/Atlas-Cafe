@@ -22,7 +22,7 @@ function loadWorld(): World {
   if (existsSync(DATA_FILE)) {
     try {
       const w = JSON.parse(readFileSync(DATA_FILE, 'utf8')) as World;
-      if (w.version === 2) {
+      if (w.version === 3) {
         console.log(`Dünya yüklendi: gün ${w.day}, ${Object.keys(w.players).length} oyuncu`);
         return w;
       }
