@@ -20,6 +20,7 @@ import {
   formatGameDate,
 } from './constants';
 import { generateMinister, ministerScore, type Rng } from './ministers';
+import { holdGeneralElection, initPolitics, stepPolitics, type ElectionOutcome } from './politics';
 import type {
   Contribution,
   CountrySeed,
@@ -165,6 +166,8 @@ export function confidenceTarget(c: CountryState): number {
   t += eco ? (eco.competence - 0.5) * 20 : -10;
   t -= Math.max(0, c.threat - 50) * 0.3;
   t += c.bureaucracy * 0.1 - 5;
+  if (c.leader?.background === 'ekonomist') t += 6;
+  if (c.leader?.background === 'isInsani') t += 4;
   t += sumValues(shockContributions(c, 'confidence'));
   return clamp(t, 0, 100);
 }
@@ -176,7 +179,7 @@ export function qualityTargets(c: CountryState): Record<QualityId, number> {
     const q = MINISTRY_QUALITY[m];
     if (!q) continue;
     const ratio = c.budget[m] / BUDGET_REFERENCE[m];
-    out[q] = 100 * (1 - Math.exp(-1.2 * ratio * ministerEfficiency(c.ministers[m]) * bureau));
+    out[q] = 100 * (1 - Math.exp(-1.2 * ratio * ministerEfficiency(c.ministers[m]) * bureau * leaderBonus(c, q)));
   }
   const k = c.completed;
   out.saglik! += k.hastane * 2;
@@ -185,6 +188,14 @@ export function qualityTargets(c: CountryState): Record<QualityId, number> {
   out.savunma! += k.savunmaSanayi * 3;
   for (const key of Object.keys(out) as QualityId[]) out[key] = clamp(out[key]!, 0, 100);
   return out as Record<QualityId, number>;
+}
+
+/** Liderin geçmişine göre bazı hizmetler daha verimli işler. */
+function leaderBonus(c: CountryState, q: QualityId): number {
+  const bg = c.leader?.background;
+  if (bg === 'asker' && (q === 'savunma' || q === 'guvenlik')) return 1.12;
+  if (bg === 'akademisyen' && (q === 'saglik' || q === 'egitim')) return 1.1;
+  return 1;
 }
 
 type FactorId =
@@ -276,6 +287,8 @@ export function approvalTargets(c: CountryState): { groups: Record<GroupId, numb
       s += f[fid] * w;
       agg.set(fid, (agg.get(fid) ?? 0) + f[fid] * w * g.weight);
     }
+    if (g.id === 'isciler' && c.leader?.background === 'sendikaci') s += 4;
+    if (g.id === 'isDunyasi' && c.leader?.background === 'isInsani') s += 4;
     groups[g.id] = clamp(s, 0, 100);
   }
   const explain: Contribution[] = [
@@ -372,6 +385,14 @@ export function createCountry(seed: CountrySeed, rng: Rng): CountryState {
     campaignRallies: 0,
     handoutUsed: false,
     lastElection: null,
+    parties: [],
+    rulingPartyId: '',
+    regions: [],
+    electionThreshold: 0,
+    leader: null,
+    leaderName: '',
+    activePromises: [],
+    govCalib: 0,
     rivals: seed.rivals,
     playable,
     names: seed.names,
@@ -389,6 +410,7 @@ export function createCountry(seed: CountrySeed, rng: Rng): CountryState {
   c.quality = qualityTargets(c);
   c.military = militaryPower(c);
   calibrate(c);
+  initPolitics(c, rng);
   return c;
 }
 
@@ -443,7 +465,7 @@ export function computeThreat(c: CountryState, ctx: WorldContext): number {
 }
 
 export interface StepResult {
-  election?: { vote: number; won: boolean };
+  election?: ElectionOutcome;
 }
 
 /** Bir oyun günü ilerlet. */
@@ -504,10 +526,11 @@ export function stepDay(c: CountryState, day: number, ctx: WorldContext, rng: Rn
 
   const date = dayToDate(day);
   if (date.getUTCDate() === 1) monthly(c, day, rng);
+  stepPolitics(c, day, rng);
 
   // Seçim
   if (c.playable && day >= c.nextElectionDay) {
-    result.election = holdElection(c, day, rng);
+    result.election = holdGeneralElection(c, day, rng);
   }
   return result;
 }
@@ -525,6 +548,7 @@ function monthly(c: CountryState, day: number, rng: Rng) {
     policyRate: c.policyRate,
   });
   if (c.history.length > 240) c.history.shift();
+  if (c.leader?.background === 'hukukcu') c.bureaucracy = clamp(c.bureaucracy + 0.25, 0, 100);
 
   // Dürüst olmayan bakanlar skandala karışabilir.
   for (const m of MINISTRIES) {
@@ -611,25 +635,6 @@ function refreshCandidates(c: CountryState, day: number, rng: Rng) {
 
 export function inCampaign(c: CountryState, day: number): boolean {
   return c.playable && day >= c.nextElectionDay - CAMPAIGN_DAYS && day < c.nextElectionDay;
-}
-
-export function holdElection(c: CountryState, day: number, rng: Rng): { vote: number; won: boolean } {
-  const vote = clamp(c.approval + 6 + c.campaignRallies + (rng() - 0.5) * 6, 5, 95);
-  const won = vote >= WIN_THRESHOLD[c.regime];
-  c.lastElection = { day, vote, won };
-  c.govSeatShare = won ? clamp(vote * 1.15, 0, 75) : clamp(100 - vote * 1.4, 25, 75);
-  c.nextElectionDay = day + Math.round(c.electionYears * 365.25);
-  c.campaignRallies = 0;
-  c.handoutUsed = false;
-  addNews(
-    c,
-    day,
-    won
-      ? `Seçim sonuçlandı: hükümet %${vote.toFixed(1)} oyla yeniden iktidarda. Sonraki seçim ${formatGameDate(c.nextElectionDay, false)}.`
-      : `Seçim sonuçlandı: hükümet %${vote.toFixed(1)} oyda kaldı ve iktidarı kaybetti.`,
-    won ? 'iyi' : 'kotu',
-  );
-  return { vote, won };
 }
 
 // ---------------------------------------------------------------- oyuncu eylemleri

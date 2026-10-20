@@ -3,37 +3,43 @@ import { dayToDate } from './constants';
 import { COUNTRY_SEEDS } from './countries';
 import { applyEventOption, rollEvent } from './events';
 import type { Rng } from './ministers';
-import { addNews, addShock, calibrate, computeThreat, createCountry, militaryPower, stepDay } from './sim';
-import type { CountryState, CountrySummary } from './types';
+import { foundParty, joinParty, leaveParty, resetGovCalib } from './politics';
+import { ActionError, addNews, calibrate, computeThreat, createCountry, militaryPower, stepDay } from './sim';
+import type { Character, CountryState, CountrySummary, ElectionResult, Ideology } from './types';
 
 export interface Player {
   id: string;
   token: string;
   name: string;
+  /** Oyuncunun siyaset yaptığı ülke (iktidarda ya da muhalefette) */
   countryId: string | null;
+  partyId: string | null;
+  character: Character | null;
 }
 
 export interface World {
-  version: 1;
+  version: 2;
   day: number;
   countries: Record<string, CountryState>;
   players: Record<string, Player>;
 }
 
-export interface GameOver {
-  playerId: string;
+export interface ElectionNight {
+  playerIds: string[];
+  countryId: string;
   countryName: string;
-  reason: string;
+  result: ElectionResult;
 }
 
 export function createWorld(rng: Rng): World {
   const countries: Record<string, CountryState> = {};
   for (const seed of COUNTRY_SEEDS) countries[seed.id] = createCountry(seed, rng);
-  const world: World = { version: 1, day: 0, countries, players: {} };
+  const world: World = { version: 2, day: 0, countries, players: {} };
   const ctx = { powers: worldPowers(world) };
   for (const c of Object.values(countries)) {
     c.threat = computeThreat(c, ctx);
     calibrate(c);
+    resetGovCalib(c);
   }
   return world;
 }
@@ -43,13 +49,13 @@ export function worldPowers(world: World): Record<string, number> {
 }
 
 /** Dünyayı bir oyun günü ilerletir. */
-export function tickWorld(world: World, rng: Rng): GameOver[] {
+export function tickWorld(world: World, rng: Rng): ElectionNight[] {
   world.day += 1;
   const day = world.day;
   const ctx = { powers: worldPowers(world) };
   const date = dayToDate(day);
   const isMonthStart = date.getUTCDate() === 1;
-  const gameOvers: GameOver[] = [];
+  const nights: ElectionNight[] = [];
 
   for (const c of Object.values(world.countries)) {
     const owned = c.ownerId !== null;
@@ -73,58 +79,77 @@ export function tickWorld(world: World, rng: Rng): GameOver[] {
     }
     c.pendingEvents = c.pendingEvents.filter((p) => p.deadlineDay > day);
 
-    if (election && !election.won) {
-      if (owned) {
-        const player = world.players[c.ownerId!];
-        if (player) {
-          player.countryId = null;
-          gameOvers.push({
-            playerId: player.id,
-            countryName: c.name,
-            reason: `Seçimi %${election.vote.toFixed(1)} oyla kaybettin.`,
-          });
-        }
-        releaseCountry(c);
-      }
-      // Yeni hükümet bir süre balayı yaşar.
-      addShock(c, day, 'Yeni hükümet balayı', 'approval', 8, 365);
+    if (election) {
+      const playerIds = Object.values(world.players)
+        .filter((p) => p.countryId === c.id)
+        .map((p) => p.id);
+      nights.push({ playerIds, countryId: c.id, countryName: c.name, result: election.result });
     }
   }
-  return gameOvers;
+  return nights;
 }
 
-export function claimCountry(world: World, player: Player, countryId: string) {
+function requireCharacter(player: Player): Character {
+  if (!player.character) throw new ActionError('Önce karakterini oluştur.');
+  return player.character;
+}
+
+function leaveCurrent(world: World, player: Player) {
+  if (player.countryId) leaveParty(world.countries[player.countryId], player.id, world.day);
+  player.countryId = null;
+  player.partyId = null;
+}
+
+export function joinCountryParty(world: World, player: Player, countryId: string, partyId: string, rng: Rng) {
   const c = world.countries[countryId];
-  if (!c) throw new Error('Ülke bulunamadı.');
-  if (!c.playable) throw new Error('Bu ülke şimdilik sadece yapay zekâ tarafından yönetiliyor.');
-  if (c.ownerId && c.ownerId !== player.id) throw new Error('Bu ülke başka bir oyuncuya ait.');
-  if (player.countryId && player.countryId !== countryId) releaseCountry(world.countries[player.countryId]);
-  c.ownerId = player.id;
-  c.ownerName = player.name;
+  if (!c) throw new ActionError('Ülke bulunamadı.');
+  const ch = requireCharacter(player);
+  if (player.partyId === partyId) return;
+  leaveCurrent(world, player);
+  joinParty(c, partyId, player.id, ch, world.day, rng);
   player.countryId = countryId;
-  addNews(c, world.day, `${player.name} ülkenin yönetimini devraldı.`, 'notr');
+  player.partyId = partyId;
 }
 
-export function releaseCountry(c: CountryState | undefined) {
-  if (!c) return;
-  c.ownerId = null;
-  c.ownerName = null;
-  c.pendingEvents = [];
+export function foundCountryParty(
+  world: World,
+  player: Player,
+  countryId: string,
+  input: { name: string; short: string; color: string; ideology: Ideology },
+  rng: Rng,
+) {
+  const c = world.countries[countryId];
+  if (!c) throw new ActionError('Ülke bulunamadı.');
+  const ch = requireCharacter(player);
+  leaveCurrent(world, player);
+  const p = foundParty(c, input, player.id, ch, world.day, rng);
+  player.countryId = countryId;
+  player.partyId = p.id;
+}
+
+export function leaveCountry(world: World, player: Player) {
+  leaveCurrent(world, player);
 }
 
 export function summarize(world: World): CountrySummary[] {
-  return Object.values(world.countries).map((c) => ({
-    id: c.id,
-    name: c.name,
-    flag: c.flag,
-    regime: c.regime,
-    ownerName: c.ownerName,
-    playable: c.playable,
-    gdp: c.gdp,
-    growth: c.growth,
-    inflation: c.inflation,
-    unemployment: c.unemployment,
-    approval: c.approval,
-    military: c.military,
-  }));
+  return Object.values(world.countries).map((c) => {
+    const rp = c.parties.find((p) => p.id === c.rulingPartyId);
+    return {
+      id: c.id,
+      name: c.name,
+      flag: c.flag,
+      regime: c.regime,
+      ownerName: c.ownerName,
+      playable: c.playable,
+      gdp: c.gdp,
+      growth: c.growth,
+      inflation: c.inflation,
+      unemployment: c.unemployment,
+      approval: c.approval,
+      military: c.military,
+      rulingParty: rp ? { name: rp.name, short: rp.short, color: rp.color } : null,
+      leaderName: c.leaderName,
+      nextElectionDay: c.nextElectionDay,
+    };
+  });
 }

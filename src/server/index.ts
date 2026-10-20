@@ -6,8 +6,8 @@ import { fileURLToPath } from 'node:url';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { createRng } from '../shared/ministers';
 import type { ClientMessage, ServerMessage } from '../shared/types';
-import { claimCountry, createWorld, releaseCountry, summarize, tickWorld, type Player, type World } from '../shared/world';
-import { handleAction } from './actions';
+import { dispatch, playerView } from '../shared/dispatch';
+import { createWorld, summarize, tickWorld, type Player, type World } from '../shared/world';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const PORT = Number(process.env.PORT ?? 3001);
@@ -22,7 +22,7 @@ function loadWorld(): World {
   if (existsSync(DATA_FILE)) {
     try {
       const w = JSON.parse(readFileSync(DATA_FILE, 'utf8')) as World;
-      if (w.version === 1) {
+      if (w.version === 2) {
         console.log(`Dünya yüklendi: gün ${w.day}, ${Object.keys(w.players).length} oyuncu`);
         return w;
       }
@@ -64,6 +64,7 @@ function stateFor(s: Session): ServerMessage {
     dayMs: DAY_MS,
     world: summarize(world),
     country: countryId ? world.countries[countryId] : null,
+    player: playerView(s.player),
   };
 }
 
@@ -81,7 +82,7 @@ function handleMessage(s: Session, msg: ClientMessage) {
     if (!player) {
       const name = String(msg.name ?? '').trim().slice(0, 24);
       if (!name) throw new Error('Bir oyuncu adı gir.');
-      player = { id: randomUUID(), token: randomBytes(24).toString('hex'), name, countryId: null };
+      player = { id: randomUUID(), token: randomBytes(24).toString('hex'), name, countryId: null, partyId: null, character: null };
       world.players[player.id] = player;
     }
     s.player = player;
@@ -92,21 +93,10 @@ function handleMessage(s: Session, msg: ClientMessage) {
   const player = s.player;
   if (!player) throw new Error('Önce giriş yapmalısın.');
 
-  if (msg.type === 'chooseCountry') {
-    claimCountry(world, player, msg.countryId);
-    broadcast();
-    return;
-  }
-  if (msg.type === 'leaveCountry') {
-    if (player.countryId) releaseCountry(world.countries[player.countryId]);
-    player.countryId = null;
-    broadcast();
-    return;
-  }
-  const c = player.countryId ? world.countries[player.countryId] : null;
-  if (!c || c.ownerId !== player.id) throw new Error('Yönettiğin bir ülke yok.');
-  handleAction(c, world.day, msg, rng);
-  send(s.ws, stateFor(s));
+  const note = dispatch(world, player, msg, rng);
+  if (note) send(s.ws, { type: 'notice', message: note });
+  // Siyasi hamleler aynı ülkedeki diğer oyuncuları da etkiler.
+  broadcast();
 }
 
 // ---------------------------------------------------------------- HTTP (derlenmiş istemci)
@@ -164,8 +154,12 @@ wss.on('connection', (ws) => {
 
 let ticks = 0;
 setInterval(() => {
-  const gameOvers = tickWorld(world, rng);
-  for (const g of gameOvers) sendToPlayer(g.playerId, { type: 'gameOver', countryName: g.countryName, reason: g.reason });
+  const nights = tickWorld(world, rng);
+  for (const n of nights) {
+    for (const id of n.playerIds) {
+      sendToPlayer(id, { type: 'electionNight', countryId: n.countryId, countryName: n.countryName, result: n.result });
+    }
+  }
   broadcast();
   ticks += 1;
   if (ticks % 5 === 0) saveWorld();

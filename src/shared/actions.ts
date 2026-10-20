@@ -1,6 +1,6 @@
-import { MINISTRIES, PROJECT_TYPES } from '../shared/constants';
-import { applyEventOption } from '../shared/events';
-import type { Rng } from '../shared/ministers';
+import { MINISTRIES, PROJECT_TYPES } from './constants';
+import { applyEventOption } from './events';
+import type { Rng } from './ministers';
 import {
   ActionError,
   appointMinister,
@@ -12,8 +12,8 @@ import {
   setPolicyRate,
   setTaxes,
   startProject,
-} from '../shared/sim';
-import type { ClientMessage, CountryState, MinistryId } from '../shared/types';
+} from './sim';
+import type { ClientMessage, CountryState, MinistryId } from './types';
 
 const num = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? x : undefined);
 const isMinistry = (x: unknown): x is MinistryId => MINISTRIES.includes(x as MinistryId);

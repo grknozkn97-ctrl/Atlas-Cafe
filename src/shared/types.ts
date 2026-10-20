@@ -143,10 +143,110 @@ export interface ReportCard {
   entries: ReportCardEntry[];
 }
 
+export interface ElectionPartyResult {
+  partyId: string;
+  vote: number;
+  seats: number;
+}
+
 export interface ElectionResult {
   day: number;
+  /** Hükümetin (seçim öncesi iktidar partisinin) oy oranı */
   vote: number;
+  /** İktidar partisi seçimi kazandı mı */
   won: boolean;
+  results: ElectionPartyResult[];
+  winnerPartyId: string;
+  /** Başkanlık sistemlerinde ikinci tur yapıldıysa */
+  runoff?: { a: string; b: string; aVote: number };
+  coalition: string[];
+}
+
+export type BackgroundId = 'ekonomist' | 'asker' | 'isInsani' | 'sendikaci' | 'akademisyen' | 'hukukcu';
+
+/** -1 (sol / özgürlükçü) … +1 (sağ / muhafazakâr) */
+export interface Ideology {
+  economic: number;
+  social: number;
+}
+
+export interface Avatar {
+  skin: number;
+  hair: number;
+  hairColor: number;
+  suit: number;
+  tie: number;
+}
+
+export interface Character {
+  name: string;
+  age: number;
+  background: BackgroundId;
+  ideology: Ideology;
+  avatar: Avatar;
+  /** 0-1, geçmişe ve yaşa göre hesaplanır */
+  charisma: number;
+}
+
+export type PromiseId =
+  | 'enflasyon'
+  | 'asgariUcret'
+  | 'vergiIndirimi'
+  | 'issizlik'
+  | 'saglik'
+  | 'egitim'
+  | 'savunma'
+  | 'kurumlar'
+  | 'tarim'
+  | 'borc';
+
+export interface ActivePromise {
+  id: PromiseId;
+  /** İktidara gelindiğinde ölçülen başlangıç değeri */
+  baseline: number;
+  kept?: boolean;
+}
+
+export interface Party {
+  id: string;
+  name: string;
+  short: string;
+  color: string;
+  ideology: Ideology;
+  /** Anket desteği (%) */
+  support: number;
+  /** Kalıcı çekim gücü (başlangıç desteğinden türetilir) */
+  appeal: number;
+  /** Kampanya ivmesi, zamanla söner */
+  momentum: number;
+  /** Teşkilat gücü 0-100 */
+  org: number;
+  /** Parti kasası (milyon $) */
+  funds: number;
+  /** Meclisteki sandalye payı (%) */
+  seats: number;
+  inGovernment: boolean;
+  leaderName: string;
+  playerId: string | null;
+  leader: Character | null;
+  promises: PromiseId[];
+  shadowCabinet: Partial<Record<MinistryId, Minister>>;
+  /** Eylem anahtarı -> tekrar yapılabileceği gün */
+  cooldowns: Record<string, number>;
+  founded: boolean;
+  /** Aylık anket geçmişi (son 48 ay) */
+  trend: number[];
+}
+
+export interface Region {
+  id: string;
+  name: string;
+  /** Nüfus payı (toplam 1) */
+  weight: number;
+  lean: Ideology;
+  /** Haritada şematik konum (0-1) */
+  x: number;
+  y: number;
 }
 
 export interface CountryState {
@@ -223,6 +323,16 @@ export interface CountryState {
   campaignRallies: number;
   handoutUsed: boolean;
   lastElection: ElectionResult | null;
+  parties: Party[];
+  rulingPartyId: string;
+  regions: Region[];
+  electionThreshold: number;
+  /** Hükümeti yöneten oyuncunun karakteri (yapay zekâ hükümetinde null) */
+  leader: Character | null;
+  leaderName: string;
+  activePromises: ActivePromise[];
+  /** Hükümet payı kalibrasyonu (seçimden sonra sönümlenir) */
+  govCalib: number;
   rivals: string[];
   playable: boolean;
   names: 'tr' | 'genel';
@@ -241,13 +351,37 @@ export interface CountrySummary {
   unemployment: number;
   approval: number;
   military: number;
+  rulingParty: { name: string; short: string; color: string } | null;
+  leaderName: string;
+  nextElectionDay: number;
+}
+
+export interface PlayerView {
+  id: string;
+  name: string;
+  character: Character | null;
+  countryId: string | null;
+  partyId: string | null;
 }
 
 /** İstemciden sunucuya giden mesajlar */
 export type ClientMessage =
   | { type: 'hello'; token?: string; name?: string }
-  | { type: 'chooseCountry'; countryId: string }
+  | { type: 'createCharacter'; character: Omit<Character, 'charisma'> }
+  | { type: 'joinParty'; countryId: string; partyId: string }
+  | {
+      type: 'foundParty';
+      countryId: string;
+      name: string;
+      short: string;
+      color: string;
+      ideology: Ideology;
+    }
   | { type: 'leaveCountry' }
+  | { type: 'partyAction'; action: 'miting'; regionId: string }
+  | { type: 'partyAction'; action: 'teskilat' | 'bagis' | 'aciklama' | 'erkenSecim' }
+  | { type: 'setPromises'; promises: PromiseId[] }
+  | { type: 'setShadow'; ministry: MinistryId; candidateId: string | null }
   | { type: 'setEconomy'; taxes?: Partial<Taxes>; policyRate?: number; minWageRaise?: number; cbIndependent?: boolean }
   | { type: 'setBudget'; budget: Partial<Record<MinistryId, number>> }
   | { type: 'startProject'; projectType: ProjectType }
@@ -259,6 +393,14 @@ export type ClientMessage =
 /** Sunucudan istemciye giden mesajlar */
 export type ServerMessage =
   | { type: 'welcome'; token: string; playerName: string; countryId: string | null }
-  | { type: 'state'; day: number; dayMs: number; world: CountrySummary[]; country: CountryState | null }
+  | {
+      type: 'state';
+      day: number;
+      dayMs: number;
+      world: CountrySummary[];
+      country: CountryState | null;
+      player: PlayerView | null;
+    }
   | { type: 'error'; message: string }
-  | { type: 'gameOver'; countryName: string; reason: string };
+  | { type: 'notice'; message: string }
+  | { type: 'electionNight'; countryId: string; countryName: string; result: ElectionResult };

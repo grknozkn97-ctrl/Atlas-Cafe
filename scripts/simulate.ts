@@ -8,6 +8,7 @@ import { createWorld, tickWorld } from '../src/shared/world';
 const years = Number(process.argv[2] ?? 10);
 const rng = createRng(42);
 const world = createWorld(rng);
+const elections: string[] = [];
 const fmt = (x: number) => x.toFixed(1).padStart(6);
 
 console.log('yıl   ülke                  büyüme  enfl.  işsiz  faiz   borç  açık   onay  tehdit');
@@ -18,7 +19,19 @@ for (let y = 0; y <= years; y++) {
       `${2026 + y}  ${c.name.slice(0, 20).padEnd(20)} ${fmt(c.growth)} ${fmt(c.inflation)} ${fmt(c.unemployment)} ${fmt(c.policyRate)} ${fmt(c.debtPct)} ${fmt(c.deficitPct)} ${fmt(c.approval)} ${fmt(c.threat)}`,
     );
   }
-  if (y < years) for (let d = 0; d < 365; d++) tickWorld(world, rng);
+  if (y < years)
+    for (let d = 0; d < 365; d++) {
+      for (const n of tickWorld(world, rng)) {
+        const c = world.countries[n.countryId];
+        const name = (id: string) => c.parties.find((p) => p.id === id)?.short ?? id;
+        const top = n.result.results
+          .slice(0, 4)
+          .map((r) => `${name(r.partyId)} ${r.vote.toFixed(1)}`)
+          .join(', ');
+        const ro = n.result.runoff ? ` | 2. tur ${name(n.result.runoff.a)} ${n.result.runoff.aVote.toFixed(1)}` : '';
+        elections.push(`${2026 + y} ${c.name}: ${top}${ro} → ${name(n.result.winnerPartyId)}${n.result.won ? '' : ' (iktidar değişti)'}`);
+      }
+    }
 }
 
 const all = Object.values(world.countries);
@@ -32,6 +45,9 @@ console.log('enflasyon', range((c) => c.inflation));
 console.log('işsizlik', range((c) => c.unemployment));
 console.log('borç', range((c) => c.debtPct));
 console.log('onay', range((c) => c.approval));
+
+console.log('\nSeçimler:');
+for (const e of elections) console.log(' ', e);
 
 if (process.env.EXPLAIN) {
   const c = world.countries[process.env.EXPLAIN];
