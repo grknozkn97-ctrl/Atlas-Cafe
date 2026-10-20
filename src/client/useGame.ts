@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ClientMessage, CountryState, CountrySummary, ServerMessage } from '../shared/types';
+import type { ClientMessage, CountryState, CountrySummary, ElectionResult, PlayerView, ServerMessage } from '../shared/types';
 
 const TOKEN_KEY = 'devlet.token';
 
@@ -29,8 +29,10 @@ export interface GameState {
   lastTickAt: number;
   world: CountrySummary[];
   country: CountryState | null;
+  player: PlayerView | null;
   error: string | null;
-  gameOver: { countryName: string; reason: string } | null;
+  notice: string | null;
+  electionNight: { countryName: string; result: ElectionResult } | null;
   /** Tek oyunculu deneme modu (tarayıcıda simülasyon) */
   offline?: boolean;
   /** Deneme modunda oyun hızı; 0 = durdurulmuş */
@@ -46,8 +48,10 @@ const initial: GameState = {
   lastTickAt: Date.now(),
   world: [],
   country: null,
+  player: null,
   error: null,
-  gameOver: null,
+  notice: null,
+  electionNight: null,
 };
 
 export function useGame() {
@@ -108,14 +112,14 @@ export function useGame() {
     [rawSend],
   );
 
-  const clearGameOver = useCallback(() => setState((s) => ({ ...s, gameOver: null })), []);
-  const clearError = useCallback(() => setState((s) => ({ ...s, error: null })), []);
+  const clearElection = useCallback(() => setState((s) => ({ ...s, electionNight: null })), []);
+  const clearError = useCallback(() => setState((s) => ({ ...s, error: null, notice: null })), []);
   const logout = useCallback(() => {
     writeToken(null);
-    setState((s) => ({ ...s, needsLogin: true, playerName: null, country: null }));
+    setState((s) => ({ ...s, needsLogin: true, playerName: null, country: null, player: null }));
   }, []);
 
-  return { state, send, login, logout, clearGameOver, clearError, setSpeed: undefined as ((ms: number) => void) | undefined };
+  return { state, send, login, logout, clearElection, clearError, setSpeed: undefined as ((ms: number) => void) | undefined };
 }
 
 function reduce(s: GameState, msg: ServerMessage): GameState {
@@ -131,6 +135,8 @@ function reduce(s: GameState, msg: ServerMessage): GameState {
         lastTickAt: msg.day !== s.day ? Date.now() : s.lastTickAt,
         world: msg.world,
         country: msg.country,
+        player: msg.player,
+        playerName: msg.player?.name ?? s.playerName,
       };
     case 'error':
       // Kayıtlı oturum sunucuda yoksa yeniden giriş iste.
@@ -139,7 +145,9 @@ function reduce(s: GameState, msg: ServerMessage): GameState {
         return { ...s, needsLogin: true, error: msg.message };
       }
       return { ...s, error: msg.message };
-    case 'gameOver':
-      return { ...s, gameOver: { countryName: msg.countryName, reason: msg.reason } };
+    case 'notice':
+      return { ...s, notice: msg.message };
+    case 'electionNight':
+      return { ...s, electionNight: { countryName: msg.countryName, result: msg.result } };
   }
 }

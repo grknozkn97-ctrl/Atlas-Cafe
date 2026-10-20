@@ -1,21 +1,22 @@
 /**
  * Tek oyunculu deneme modu: simülasyon sunucu yerine tarayıcıda çalışır.
  * `useGame` ile aynı arayüzü sunar; ek olarak oyun hızı ayarlanabilir.
+ * Oyuncu bir partiye girene kadar zaman akmaz.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { dispatch, playerView } from '../shared/dispatch';
 import { createRng } from '../shared/ministers';
 import type { ClientMessage } from '../shared/types';
-import { claimCountry, createWorld, releaseCountry, summarize, tickWorld, type World } from '../shared/world';
-import { handleAction } from '../server/actions';
+import { createWorld, summarize, tickWorld, type World } from '../shared/world';
 import type { GameState } from './useGame';
 
-const SAVE_KEY = 'devlet.demo.v1';
+const SAVE_KEY = 'devlet.demo.v2';
 
 export const SPEEDS = [
-  { label: 'Durdur', ms: 0 },
-  { label: 'Normal', ms: 2000 },
-  { label: 'Hızlı', ms: 500 },
-  { label: 'Çok hızlı', ms: 120 },
+  { label: 'Durdur', icon: '⏸', ms: 0 },
+  { label: 'Normal', icon: '▶', ms: 2000 },
+  { label: 'Hızlı', icon: '⏩', ms: 500 },
+  { label: 'Çok hızlı', icon: '⏭', ms: 120 },
 ];
 
 interface Saved {
@@ -28,7 +29,7 @@ function load(): Saved | null {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
     const s = JSON.parse(raw) as Saved;
-    return s.world?.version === 1 ? s : null;
+    return s.world?.version === 2 ? s : null;
   } catch {
     return null;
   }
@@ -49,72 +50,71 @@ export function useLocalGame() {
   if (saved.current === null) saved.current = load() ?? { world: createWorld(createRng(Date.now() % 2 ** 31)), playerName: null };
   const world = saved.current.world;
   const rng = useRef(createRng((Date.now() + 7) % 2 ** 31));
-  const [speedMs, setSpeedMs] = useState(SPEEDS[1].ms);
+  // Her açılışta oyun duraklatılmış başlar; oyuncu hazır olunca başlatır.
+  const [speedMs, setSpeedMs] = useState(0);
 
-  const snapshot = useCallback(
-    (extra: Partial<GameState> = {}): Partial<GameState> => {
-      const p = world.players[PLAYER_ID];
-      const c = p?.countryId ? world.countries[p.countryId] : null;
-      return {
-        day: world.day,
-        world: summarize(world),
-        country: c ? structuredClone(c) : null,
-        ...extra,
-      };
-    },
-    [world],
-  );
+  const snapshot = useCallback((): Partial<GameState> => {
+    const p = world.players[PLAYER_ID];
+    const c = p?.countryId ? world.countries[p.countryId] : null;
+    return {
+      day: world.day,
+      world: summarize(world),
+      country: c ? structuredClone(c) : null,
+      player: playerView(p),
+      playerName: p?.name ?? null,
+    };
+  }, [world]);
 
   const [state, setState] = useState<GameState>(() => ({
     connected: true,
-    needsLogin: !saved.current!.playerName,
-    playerName: saved.current!.playerName,
+    needsLogin: !world.players[PLAYER_ID],
+    playerName: null,
     day: world.day,
     dayMs: SPEEDS[1].ms,
     lastTickAt: Date.now(),
     world: summarize(world),
     country: null,
+    player: null,
     error: null,
-    gameOver: null,
+    notice: null,
+    electionNight: null,
     offline: true,
     ...snapshot(),
   }));
 
+  const ready = !!world.players[PLAYER_ID]?.partyId;
+  const effective = ready ? speedMs : 0;
+
   useEffect(() => {
-    if (!speedMs) return;
+    if (!effective) return;
     let ticks = 0;
     const t = setInterval(() => {
-      const overs = tickWorld(world, rng.current);
-      const over = overs.find((o) => o.playerId === PLAYER_ID);
+      const nights = tickWorld(world, rng.current);
+      const mine = nights.find((n) => n.playerIds.includes(PLAYER_ID));
       ticks += 1;
-      if (ticks % 10 === 0) save(saved.current!);
+      if (ticks % 10 === 0 || mine) save(saved.current!);
+      // Seçim gecesi sonuçları ekrandayken zaman durur.
+      if (mine) setSpeedMs(0);
       setState((s) => ({
         ...s,
         ...snapshot(),
         lastTickAt: Date.now(),
-        gameOver: over ? { countryName: over.countryName, reason: over.reason } : s.gameOver,
+        electionNight: mine ? { countryName: mine.countryName, result: mine.result } : s.electionNight,
       }));
-    }, speedMs);
+    }, effective);
     return () => clearInterval(t);
-  }, [speedMs, world, snapshot]);
+  }, [effective, world, snapshot]);
 
   const send = useCallback(
     (msg: ClientMessage) => {
       const player = world.players[PLAYER_ID];
       try {
-        if (msg.type === 'chooseCountry') claimCountry(world, player, msg.countryId);
-        else if (msg.type === 'leaveCountry') {
-          if (player.countryId) releaseCountry(world.countries[player.countryId]);
-          player.countryId = null;
-        } else {
-          const c = player.countryId ? world.countries[player.countryId] : null;
-          if (!c) throw new Error('Yönettiğin bir ülke yok.');
-          handleAction(c, world.day, msg, rng.current);
-        }
+        if (!player) throw new Error('Önce oyuna başla.');
+        const note = dispatch(world, player, msg, rng.current);
         save(saved.current!);
-        setState((s) => ({ ...s, ...snapshot(), error: null }));
+        setState((s) => ({ ...s, ...snapshot(), error: null, notice: note || null }));
       } catch (err) {
-        setState((s) => ({ ...s, error: err instanceof Error ? err.message : 'Bilinmeyen hata' }));
+        setState((s) => ({ ...s, notice: null, error: err instanceof Error ? err.message : 'Bilinmeyen hata' }));
       }
     },
     [world, snapshot],
@@ -122,10 +122,12 @@ export function useLocalGame() {
 
   const login = useCallback(
     (name: string) => {
-      world.players[PLAYER_ID] = { id: PLAYER_ID, token: PLAYER_ID, name, countryId: null };
+      if (!world.players[PLAYER_ID]) {
+        world.players[PLAYER_ID] = { id: PLAYER_ID, token: PLAYER_ID, name, countryId: null, partyId: null, character: null };
+      }
       saved.current!.playerName = name;
       save(saved.current!);
-      setState((s) => ({ ...s, needsLogin: false, playerName: name, ...snapshot() }));
+      setState((s) => ({ ...s, needsLogin: false, ...snapshot() }));
     },
     [world, snapshot],
   );
@@ -142,11 +144,11 @@ export function useLocalGame() {
 
   const setSpeed = useCallback((ms: number) => {
     setSpeedMs(ms);
-    setState((s) => ({ ...s, dayMs: ms || s.dayMs, speedMs: ms, lastTickAt: Date.now() }));
+    setState((s) => ({ ...s, dayMs: ms || s.dayMs, lastTickAt: Date.now() }));
   }, []);
 
-  const clearGameOver = useCallback(() => setState((s) => ({ ...s, gameOver: null })), []);
-  const clearError = useCallback(() => setState((s) => ({ ...s, error: null })), []);
+  const clearElection = useCallback(() => setState((s) => ({ ...s, electionNight: null })), []);
+  const clearError = useCallback(() => setState((s) => ({ ...s, error: null, notice: null })), []);
 
-  return { state: { ...state, speedMs }, send, login, logout, clearGameOver, clearError, setSpeed };
+  return { state: { ...state, speedMs: effective }, send, login, logout, clearElection, clearError, setSpeed };
 }

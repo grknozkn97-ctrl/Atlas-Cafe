@@ -1,13 +1,23 @@
 # Devlet: Ülke Yönetim Simülasyonu
 
-Tarayıcıda oynanan, gerçek zamanlı ve çok oyunculu bir ülke yönetim simülasyonu. Sunucuda dünya sürekli
-işler: oyuncular gerçek ülkelerden birini seçip yönetir, seçilmeyen ülkeleri yapay zekâ yönetir.
+Tarayıcıda oynanan, gerçek zamanlı ve çok oyunculu bir siyaset ve ülke yönetim simülasyonu. Oyuncu bir
+lider yaratır, dünya haritasından bir ülke seçer, oradaki bir muhalefet partisinin başına geçer ya da kendi
+partisini kurar. Seçimi kazanırsa hükümeti kurar ve ülkeyi yönetir; kaybederse muhalefette mücadeleye devam
+eder. Oyuncuların hükümette olmadığı ülkeleri yapay zekâ yönetir.
 
 **Zaman:** 1 gerçek gün ≈ 2 oyun ayı (1 oyun günü = 24 gerçek dakika). Türkiye'nin 5 yıllık seçim dönemi
 yaklaşık 30 gerçek güne denk gelir.
 
-## Neler var (ilk sürüm)
+## Neler var
 
+- Lider oluşturma: isim, yaş, geçmiş (ekonomist, emekli general, iş insanı, sendikacı, akademisyen,
+  hukukçu), ideoloji pusulası ve SVG portre. Geçmiş, karizmayı ve iktidardaki bonusları belirler
+- Dünya haritası (d3-geo + world-atlas): ülkeleri tek tek incele, iktidar partisi, meclis ve ekonomi
+- Gerçek partiler ve yaklaşık anket destekleri, seçim barajları, meclis yarım dairesi
+- Muhalefet karargâhı: bölge mitingleri, teşkilat, bağış, basın açıklaması, erken seçim çağrısı,
+  seçim vaatleri ve gölge kabine
+- Çok partili seçim: başkanlıkta ikinci tur, parlamenter sistemde koalisyon; kazanan oyuncu gölge
+  kabinesiyle hükümeti kurar, vaatleri bir sonraki seçimde karneye girer
 - 23 ülke, 2025 civarı yaklaşık gerçek verilerle (otoriter rejimler şimdilik sadece yapay zekâda)
 - Ekonomi: vergiler, politika faizi, merkez bankası bağımsızlığı, asgari ücret
 - Neden-sonuç modeli: enflasyon, büyüme, işsizlik ve hükümete destek, etkenlerin gecikmeli toplamıdır;
@@ -15,7 +25,7 @@ yaklaşık 30 gerçek güne denk gelir.
 - 10 bakanlığın bütçesi ve hizmet kalitesi
 - Yatırımlar: fabrika, enerji santrali, otoyol, hastane, okul, savunma sanayii, dijital devlet
 - Kabine: bakan atama ve görevden alma, aday havuzu, çeyreklik karne
-- Toplum grupları, seçimler, kampanya (miting, seçim ekonomisi). Seçimi kaybeden ülkesini kaybeder
+- Toplum grupları ve seçim kampanyası (miting, seçim ekonomisi). Seçimi kaybeden muhalefete düşer
 - Savunma: askeri güç, rakip ülkeler ve dış tehdit
 - Rastgele olaylar (deprem, salgın, kriz, grev, skandal…) ve karar süresi dolunca otomatik pilot
 
@@ -49,7 +59,7 @@ Ortam değişkenleri:
 ## Tek oyunculu deneme sürümü
 
 `npm run build:demo` sunucusuz bir sürüm üretir: simülasyon tarayıcıda çalışır, oyun hızı üst çubuktan
-ayarlanır ve ilerleme tarayıcıda saklanır.
+ayarlanır ve ilerleme tarayıcıda saklanır. Oyuncu bir partiye girip "Zamanı başlat" diyene kadar zaman akmaz.
 
 ## Diğer komutlar
 

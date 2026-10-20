@@ -224,7 +224,18 @@ export function initPolitics(c: CountryState, rng: Rng) {
       trend: [support],
     };
   });
+  const seedGovSeats = c.govSeatShare;
   assignSeats(c, c.parties.map((p) => ({ partyId: p.id, vote: p.support, seats: 0 })));
+  // Meclis son seçimin sonucunu yansıtır: hükümetin gerçek sandalye payına ölçekle.
+  const gov = c.parties.filter((p) => p.inGovernment && p.seats > 0);
+  const govNow = gov.reduce((s, p) => s + p.seats, 0);
+  if (gov.length && govNow > 0 && govNow < 100 && seedGovSeats > 0 && seedGovSeats < 100) {
+    for (const p of c.parties) {
+      if (p.seats <= 0) continue;
+      p.seats *= p.inGovernment ? seedGovSeats / govNow : (100 - seedGovSeats) / (100 - govNow);
+    }
+    c.govSeatShare = seedGovSeats;
+  }
   const ruling = c.parties.find((p) => seeds[Number(p.id.split('-')[1])]?.ruling) ?? c.parties[0];
   c.rulingPartyId = ruling?.id ?? '';
   c.leaderName = ruling?.leaderName ?? '';

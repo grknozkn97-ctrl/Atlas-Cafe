@@ -354,7 +354,16 @@ export interface CountrySummary {
   rulingParty: { name: string; short: string; color: string } | null;
   leaderName: string;
   nextElectionDay: number;
+  population: number;
+  debtPct: number;
+  electionThreshold: number;
+  parties: PartySummary[];
 }
+
+export type PartySummary = Pick<
+  Party,
+  'id' | 'name' | 'short' | 'color' | 'ideology' | 'support' | 'seats' | 'inGovernment' | 'leaderName' | 'playerId' | 'founded'
+>;
 
 export interface PlayerView {
   id: string;

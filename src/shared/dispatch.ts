@@ -19,12 +19,13 @@ export function dispatch(world: World, player: Player, msg: ClientMessage, rng: 
       player.name = player.character.name;
       return;
     }
-    case 'joinParty':
-      joinCountryParty(world, player, msg.countryId, msg.partyId, rng);
-      return;
+    case 'joinParty': {
+      const pct = joinCountryParty(world, player, msg.countryId, msg.partyId, rng);
+      return `Kurultayda delegelerin %${pct.toFixed(0)} oyuyla genel başkan seçildin.`;
+    }
     case 'foundParty':
       foundCountryParty(world, player, msg.countryId, msg, rng);
-      return;
+      return 'Partin kuruldu. Kuruluş dilekçesi İçişleri Bakanlığına verildi.';
     case 'leaveCountry':
       leaveCountry(world, player);
       return;

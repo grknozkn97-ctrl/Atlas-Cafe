@@ -39,8 +39,9 @@ export function PeoplePanel({ c, day, dayMs, send }: PanelProps) {
             <span className="muted">({daysLeft} oyun günü, ~{realDuration(daysLeft, dayMs)})</span>
           </p>
           <p className="muted small">
-            Kazanmak için yaklaşık %{threshold} oy gerekir. Oy oranın; destek oranın, sadık seçmen tabanı (+6) ve
-            kampanya mitinglerinden oluşur. Seçimi kaybedersen ülke yapay zekâya geçer.
+            Seçimde her parti kendi anket desteği kadar oy alır. Hükümet partisine kampanya mitingleri ve seçim vaatlerinin
+            karnesi eklenir. {c.regime === 'parlamenter' ? 'En büyük parti, ideolojisi yakın partilerle meclis çoğunluğu kurar.' : `İlk turda %50'yi geçen olmazsa en güçlü iki aday ikinci tura kalır (eşik yaklaşık %${threshold}).`} Seçimi
+            kaybedersen muhalefete düşersin ve yeniden mücadele edebilirsin.
           </p>
           <h4>Kampanya</h4>
           {campaign ? (

@@ -104,11 +104,12 @@ export function joinCountryParty(world: World, player: Player, countryId: string
   const c = world.countries[countryId];
   if (!c) throw new ActionError('Ülke bulunamadı.');
   const ch = requireCharacter(player);
-  if (player.partyId === partyId) return;
+  if (player.partyId === partyId) return 0;
   leaveCurrent(world, player);
-  joinParty(c, partyId, player.id, ch, world.day, rng);
+  const delegates = joinParty(c, partyId, player.id, ch, world.day, rng);
   player.countryId = countryId;
   player.partyId = partyId;
+  return delegates;
 }
 
 export function foundCountryParty(
@@ -150,6 +151,22 @@ export function summarize(world: World): CountrySummary[] {
       rulingParty: rp ? { name: rp.name, short: rp.short, color: rp.color } : null,
       leaderName: c.leaderName,
       nextElectionDay: c.nextElectionDay,
+      population: c.population,
+      debtPct: c.debtPct,
+      electionThreshold: c.electionThreshold,
+      parties: c.parties.map((p) => ({
+        id: p.id,
+        name: p.name,
+        short: p.short,
+        color: p.color,
+        ideology: p.ideology,
+        support: p.support,
+        seats: p.seats,
+        inGovernment: p.inGovernment,
+        leaderName: p.leaderName,
+        playerId: p.playerId,
+        founded: p.founded,
+      })),
     };
   });
 }

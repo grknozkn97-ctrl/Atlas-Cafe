@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { REGIME_LABELS, formatGameDate } from '../shared/constants';
-import type { ClientMessage, CountryState, CountrySummary } from '../shared/types';
-import { money, pct } from './format';
+import type { ClientMessage, CountryState, CountrySummary, PartySummary, PlayerView } from '../shared/types';
+import { pct } from './format';
 import { BudgetPanel } from './panels/BudgetPanel';
 import { DefensePanel } from './panels/DefensePanel';
 import { EconomyPanel } from './panels/EconomyPanel';
@@ -11,6 +11,14 @@ import { OverviewPanel } from './panels/OverviewPanel';
 import { PeoplePanel } from './panels/PeoplePanel';
 import { ProjectsPanel } from './panels/ProjectsPanel';
 import { WorldPanel } from './panels/WorldPanel';
+import { CharacterCreator } from './screens/CharacterCreator';
+import { CountrySelect } from './screens/CountrySelect';
+import { Ceremony, ElectionNight } from './screens/Overlays';
+import { PartyChoice } from './screens/PartyChoice';
+import { OppositionView, PoliticsPanel } from './screens/Politics';
+import { Title } from './screens/Title';
+import { Avatar } from './ui/Avatar';
+import { Gauge, PartyBadge } from './ui/Widgets';
 import { useGame } from './useGame';
 import { SPEEDS, useLocalGame } from './useLocalGame';
 
@@ -26,27 +34,82 @@ export interface PanelProps {
 }
 
 const TABS = [
-  { id: 'genel', label: 'Genel Bakış', Comp: OverviewPanel },
-  { id: 'ekonomi', label: 'Ekonomi', Comp: EconomyPanel },
-  { id: 'butce', label: 'Bütçe', Comp: BudgetPanel },
-  { id: 'projeler', label: 'Yatırımlar', Comp: ProjectsPanel },
-  { id: 'bakanlar', label: 'Kabine', Comp: MinistersPanel },
-  { id: 'halk', label: 'Halk ve Seçim', Comp: PeoplePanel },
-  { id: 'savunma', label: 'Savunma', Comp: DefensePanel },
-  { id: 'olaylar', label: 'Gündem', Comp: EventsPanel },
-  { id: 'dunya', label: 'Dünya', Comp: WorldPanel },
+  { id: 'genel', label: '🏛️ Genel Bakış', Comp: OverviewPanel },
+  { id: 'ekonomi', label: '💹 Ekonomi', Comp: EconomyPanel },
+  { id: 'butce', label: '🧾 Bütçe', Comp: BudgetPanel },
+  { id: 'projeler', label: '🏗️ Yatırımlar', Comp: ProjectsPanel },
+  { id: 'bakanlar', label: '👥 Kabine', Comp: MinistersPanel },
+  { id: 'halk', label: '🗳️ Halk ve Seçim', Comp: PeoplePanel },
+  { id: 'siyaset', label: '📊 Parti ve Meclis', Comp: PoliticsPanel },
+  { id: 'savunma', label: '🛡️ Savunma', Comp: DefensePanel },
+  { id: 'olaylar', label: '⚠️ Gündem', Comp: EventsPanel },
+  { id: 'dunya', label: '🌍 Dünya', Comp: WorldPanel },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
 
 export function App() {
-  const { state, send, login, logout, clearGameOver, clearError, setSpeed } = DEMO ? useLocalGame() : useGame();
-  const countryId = state.country?.id ?? null;
-  useEffect(() => window.scrollTo(0, 0), [countryId]);
+  const { state, send, login, logout, clearElection, clearError, setSpeed } = DEMO ? useLocalGame() : useGame();
+  const [browsing, setBrowsing] = useState<string | null>(null);
+  const [ceremony, setCeremony] = useState<{ party: Pick<PartySummary, 'name' | 'short' | 'color'>; founded: boolean } | null>(null);
+  const player = state.player;
+  const screen =
+    state.needsLogin || !state.playerName
+      ? 'title'
+      : !player?.character
+        ? 'creator'
+        : !player.partyId
+          ? browsing
+            ? 'party'
+            : 'select'
+          : 'game';
+  useEffect(() => window.scrollTo(0, 0), [screen, browsing]);
+  // Hata olursa (ör. parti adı alınmış) tören penceresini kapat.
+  useEffect(() => {
+    if (state.error && ceremony && !player?.partyId) setCeremony(null);
+  }, [state.error, ceremony, player?.partyId]);
 
-  if (state.needsLogin) return <Login onLogin={login} error={state.error} connected={state.connected} />;
-  if (!state.playerName) return <div className="center muted">Bağlanılıyor…</div>;
+  const toast = (state.error || (state.notice && !ceremony)) && (
+    <div className={`toast ${state.error ? 'err' : ''}`} onClick={clearError} role="status">
+      {state.error ?? state.notice}
+    </div>
+  );
 
+  if (screen === 'title') {
+    return <Title world={state.world} demo={DEMO} connected={state.connected} onStart={() => login('Yeni lider')} />;
+  }
+  if (screen === 'creator') {
+    return (
+      <div className="app setup">
+        {toast}
+        <CharacterCreator send={send} />
+      </div>
+    );
+  }
+  if (screen === 'select' || screen === 'party') {
+    const c = state.world.find((x) => x.id === browsing);
+    return (
+      <div className="app setup">
+        {toast}
+        {screen === 'party' && c && player?.character ? (
+          <PartyChoice
+            c={c}
+            character={player.character}
+            send={send}
+            onBack={() => setBrowsing(null)}
+            onCeremony={(party, founded) => setCeremony({ party, founded })}
+          />
+        ) : (
+          <CountrySelect world={state.world} day={state.day} onChoose={setBrowsing} />
+        )}
+      </div>
+    );
+  }
+
+  const c = state.country;
+  const myParty = c?.parties.find((p) => p.id === player?.partyId) ?? null;
+  const governing = !!c && c.ownerId === player?.id;
+  const title = c && c.regime === 'parlamenter' ? 'Başbakan' : 'Devlet başkanı';
   return (
     <div className="app">
       <TopBar
@@ -54,69 +117,51 @@ export function App() {
         dayMs={state.dayMs}
         lastTickAt={state.lastTickAt}
         connected={state.connected}
-        playerName={state.playerName}
-        country={state.country}
-        onLeave={() => send({ type: 'leaveCountry' })}
+        player={player}
+        country={c}
+        role={governing ? title : myParty ? `${myParty.short} genel başkanı` : ''}
+        onLeave={() => {
+          setBrowsing(null);
+          send({ type: 'leaveCountry' });
+        }}
         onLogout={logout}
         speedMs={state.speedMs}
         onSpeed={setSpeed}
       />
-      {state.error && (
-        <div className="toast" onClick={clearError}>
-          {state.error}
-        </div>
+      {toast}
+      {ceremony && (
+        <Ceremony
+          party={ceremony.party}
+          founded={ceremony.founded}
+          notice={state.notice}
+          player={player}
+          onDone={() => {
+            setCeremony(null);
+            clearError();
+          }}
+        />
       )}
-      {state.gameOver && (
-        <div className="modal-bg">
-          <div className="modal">
-            <h2>İktidarı kaybettin</h2>
-            <p>
-              {state.gameOver.countryName}: {state.gameOver.reason}
-            </p>
-            <p className="muted">Ülke artık yapay zekâ tarafından yönetiliyor. Yeni bir ülke seçerek tekrar deneyebilirsin.</p>
-            <button className="primary" onClick={clearGameOver}>
-              Tamam
-            </button>
-          </div>
-        </div>
+      {state.electionNight && (
+        <ElectionNight
+          countryName={state.electionNight.countryName}
+          result={state.electionNight.result}
+          c={c}
+          player={player}
+          onClose={clearElection}
+        />
       )}
-      {state.country ? (
-        <Dashboard c={state.country} day={state.day} dayMs={state.dayMs} world={state.world} send={send} />
-      ) : (
-        <CountryPicker world={state.world} onPick={(id) => send({ type: 'chooseCountry', countryId: id })} />
-      )}
-    </div>
-  );
-}
-
-function Login({ onLogin, error, connected }: { onLogin: (n: string) => void; error: string | null; connected: boolean }) {
-  const [name, setName] = useState('');
-  return (
-    <div className="center">
-      <form
-        className="card login"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (name.trim()) onLogin(name.trim());
-        }}
-      >
-        <h1>🏛️ Devlet</h1>
-        <p className="muted">Gerçek zamanlı ülke yönetim simülasyonu. Bir ülke seç, ekonomiyi yönet, seçimleri kazan.</p>
-        {DEMO && (
-          <p className="small muted">
-            Bu tek oyunculu deneme sürümü. Dünya senin tarayıcında işler; diğer ülkeleri yapay zekâ yönetir ve
-            oyun hızını üst çubuktan değiştirebilirsin.
-          </p>
-        )}
-        <label>
-          Oyuncu adın
-          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={24} autoFocus placeholder="Örn. Gürkan" />
-        </label>
-        <button className="primary" disabled={!connected || !name.trim()}>
-          {connected ? 'Oyuna başla' : 'Sunucuya bağlanılıyor…'}
+      {DEMO && state.speedMs === 0 && !ceremony && !state.electionNight && (
+        <button className="start-time" onClick={() => setSpeed?.(SPEEDS[1].ms)}>
+          ▶ Zamanı başlat
         </button>
-        {error && <p className="error">{error}</p>}
-      </form>
+      )}
+      {c && governing ? (
+        <Dashboard c={c} day={state.day} dayMs={state.dayMs} world={state.world} send={send} title={title} />
+      ) : c && myParty ? (
+        <OppositionView c={c} p={myParty} day={state.day} dayMs={state.dayMs} send={send} />
+      ) : (
+        <div className="center muted">Yükleniyor…</div>
+      )}
     </div>
   );
 }
@@ -126,17 +171,19 @@ function TopBar(props: {
   dayMs: number;
   lastTickAt: number;
   connected: boolean;
-  playerName: string;
+  player: PlayerView | null;
   country: CountryState | null;
+  role: string;
   onLeave: () => void;
   onLogout: () => void;
   speedMs?: number;
   onSpeed?: (ms: number) => void;
 }) {
   const [now, setNow] = useState(Date.now());
-  // Ülkeyi bırakmak geri alınamaz: ilk tıklama onay ister, ikincisi uygular.
+  // Geri alınamaz işlemler: ilk tıklama onay ister, ikincisi uygular.
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [menu, setMenu] = useState(false);
   useEffect(() => {
     if (!confirmLeave && !confirmReset) return;
     const t = setTimeout(() => {
@@ -146,112 +193,120 @@ function TopBar(props: {
     return () => clearTimeout(t);
   }, [confirmLeave, confirmReset]);
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 500);
+    const t = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(t);
   }, []);
   const paused = props.speedMs === 0;
   const progress = paused ? 0 : Math.min(1, (now - props.lastTickAt) / props.dayMs);
+  const ch = props.player?.character;
   return (
     <header className="topbar">
-      <div className="brand">🏛️ Devlet</div>
+      <div className="brand">DEVLET</div>
       {props.country && (
         <div className="country-name">
-          {props.country.flag} {props.country.name}
-          <span className="muted small"> · {REGIME_LABELS[props.country.regime]}</span>
+          <span className="flag">{props.country.flag}</span>
+          <span className="cn-text">
+            {props.country.name}
+            <span className="muted small"> · {REGIME_LABELS[props.country.regime]}</span>
+          </span>
         </div>
       )}
-      <div className="date">
+      <div className={`date ${paused ? 'paused' : ''}`}>
         <div>{formatGameDate(props.day)}</div>
         <div className="day-progress" title="Bir sonraki oyun gününe kalan süre">
           <div style={{ width: `${progress * 100}%` }} />
         </div>
       </div>
+      {props.onSpeed && (
+        <span className="speed" role="group" aria-label="Oyun hızı">
+          {SPEEDS.map((sp) => (
+            <button
+              key={sp.label}
+              title={sp.label}
+              aria-label={sp.label}
+              className={`ghost small ${props.speedMs === sp.ms ? 'on' : ''}`}
+              onClick={() => props.onSpeed!(sp.ms)}
+            >
+              {sp.icon}
+            </button>
+          ))}
+        </span>
+      )}
       <div className="right">
-        <span className={props.connected ? 'dot on' : 'dot'} title={props.connected ? 'Bağlı' : 'Bağlantı yok'} />
-        <span className="small">{props.playerName}</span>
-        {props.onSpeed && (
-          <span className="speed" role="group" aria-label="Oyun hızı">
-            {SPEEDS.map((sp) => (
-              <button
-                key={sp.label}
-                className={`ghost small ${props.speedMs === sp.ms ? 'on' : ''}`}
-                onClick={() => props.onSpeed!(sp.ms)}
-              >
-                {sp.label}
-              </button>
-            ))}
+        {!props.onSpeed && <span className={props.connected ? 'dot on' : 'dot'} title={props.connected ? 'Bağlı' : 'Bağlantı yok'} />}
+        <button className="me-chip" onClick={() => setMenu((m) => !m)} aria-expanded={menu}>
+          {ch && <Avatar a={ch.avatar} size={30} />}
+          <span className="me-text">
+            <b>{ch?.name ?? props.player?.name}</b>
+            <span className="small muted">{props.role}</span>
           </span>
-        )}
-        {props.country && (
-          <button
-            className={confirmLeave ? 'danger small' : 'ghost small'}
-            onClick={() => {
-              if (confirmLeave) {
-                setConfirmLeave(false);
-                props.onLeave();
-              } else setConfirmLeave(true);
-            }}
-          >
-            {confirmLeave ? 'Emin misin? Bırak' : 'Ülkeyi bırak'}
-          </button>
-        )}
-        {props.onSpeed ? (
-          <button
-            className={confirmReset ? 'danger small' : 'ghost small'}
-            onClick={() => (confirmReset ? props.onLogout() : setConfirmReset(true))}
-          >
-            {confirmReset ? 'Kayıt silinsin mi? Evet' : 'Yeniden başla'}
-          </button>
-        ) : (
-          <button className="ghost small" onClick={props.onLogout}>
-            Çıkış
-          </button>
+        </button>
+        {menu && (
+          <div className="me-menu card">
+            <button
+              className={confirmLeave ? 'danger small' : 'ghost small'}
+              onClick={() => {
+                if (confirmLeave) {
+                  setConfirmLeave(false);
+                  setMenu(false);
+                  props.onLeave();
+                } else setConfirmLeave(true);
+              }}
+            >
+              {confirmLeave ? 'Emin misin? İstifa et' : 'Partiden istifa et, ülke değiştir'}
+            </button>
+            {props.onSpeed ? (
+              <button className={confirmReset ? 'danger small' : 'ghost small'} onClick={() => (confirmReset ? props.onLogout() : setConfirmReset(true))}>
+                {confirmReset ? 'Kayıt silinsin mi? Evet' : 'Baştan başla'}
+              </button>
+            ) : (
+              <button className="ghost small" onClick={props.onLogout}>
+                Çıkış
+              </button>
+            )}
+          </div>
         )}
       </div>
     </header>
   );
 }
 
-function CountryPicker({ world, onPick }: { world: CountrySummary[]; onPick: (id: string) => void }) {
-  const sorted = [...world].sort((a, b) => Number(b.playable) - Number(a.playable) || b.gdp - a.gdp);
+function GovHeader({ c, day, title }: { c: CountryState; day: number; title: string }) {
+  const p = c.parties.find((x) => x.id === c.rulingPartyId);
+  const partners = c.parties.filter((x) => x.inGovernment && x.id !== c.rulingPartyId);
   return (
-    <main className="picker">
-      <h2>Yöneteceğin ülkeyi seç</h2>
-      <p className="muted">
-        Seçilmeyen ülkeleri yapay zekâ yönetir. Otoriter rejimler şimdilik sadece yapay zekâya açık.
-      </p>
-      <div className="country-grid">
-        {sorted.map((c) => {
-          const taken = !!c.ownerName;
-          const disabled = !c.playable || taken;
-          return (
-            <button key={c.id} className="country-card" disabled={disabled} onClick={() => onPick(c.id)}>
-              <div className="flag">{c.flag}</div>
-              <div className="name">{c.name}</div>
-              <div className="small muted">{REGIME_LABELS[c.regime]}</div>
-              <div className="stats small">
-                <span>GSYH {money(c.gdp)}</span>
-                <span>Enflasyon {pct(c.inflation)}</span>
-                <span>İşsizlik {pct(c.unemployment)}</span>
-                <span>Onay {pct(c.approval)}</span>
-              </div>
-              <div className="owner small">
-                {taken ? `Yönetici: ${c.ownerName}` : c.playable ? 'Boşta (yapay zekâ)' : 'Sadece yapay zekâ'}
-              </div>
-            </button>
-          );
-        })}
+    <section className="hq-head card gov" style={{ ['--party' as string]: p?.color }}>
+      {c.leader && <Avatar a={c.leader.avatar} size={72} ring={p?.color} />}
+      <div className="hq-title">
+        <div className="small muted">
+          {c.flag} {title}
+        </div>
+        <h2>{c.leaderName}</h2>
+        <div className="small hq-parties">
+          {p && <PartyBadge p={p} size={22} />} {p?.name}
+          {partners.length > 0 && <span className="muted"> + {partners.map((x) => x.short).join(', ')}</span>}
+        </div>
       </div>
-    </main>
+      <div className="hq-gauges">
+        <Gauge value={c.approval} label="Halk desteği" />
+        <Gauge value={c.govSeatShare} label="Meclis çoğunluğu" tone={c.govSeatShare > 50 ? 'good' : 'bad'} sub={pct(c.govSeatShare)} />
+        <div className="hq-next">
+          <span className="small muted">Sonraki seçim</span>
+          <b>{formatGameDate(c.nextElectionDay, false)}</b>
+          <span className="small muted">{Math.max(0, c.nextElectionDay - day)} gün</span>
+        </div>
+      </div>
+    </section>
   );
 }
 
-function Dashboard(props: PanelProps) {
+function Dashboard(props: PanelProps & { title: string }) {
   const [tab, setTab] = useState<TabId>('genel');
   const Active = TABS.find((t) => t.id === tab)!.Comp;
   const pending = props.c.pendingEvents.length;
   return (
     <div className="dashboard">
+      <GovHeader c={props.c} day={props.day} title={props.title} />
       <nav className="tabs">
         {TABS.map((t) => (
           <button key={t.id} className={t.id === tab ? 'active' : ''} onClick={() => setTab(t.id)}>

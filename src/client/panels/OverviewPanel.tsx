@@ -23,6 +23,8 @@ export function OverviewPanel({ c, day, dayMs }: PanelProps) {
     { key: 'threat', label: 'Dış tehdit', value: `${n1(c.threat)}/100` },
   ];
   const daysToElection = c.nextElectionDay - day;
+  const ruling = c.parties.find((p) => p.id === c.rulingPartyId);
+  const winner = c.lastElection ? c.parties.find((p) => p.id === c.lastElection!.winnerPartyId) : undefined;
   const h = c.history.slice(-60);
 
   return (
@@ -69,7 +71,7 @@ export function OverviewPanel({ c, day, dayMs }: PanelProps) {
                 {daysToElection} oyun günü, gerçek zamanda yaklaşık {realDuration(daysToElection, dayMs)} kaldı.
               </p>
               <p className="muted small">
-                Kazanmak için oyların yaklaşık yarısı gerekir. Şu anki desteğin {pct(c.approval)}.
+                Hükümete destek {pct(c.approval)}. Partinin anketteki payı: {pct(ruling?.support ?? 0)}.
               </p>
             </>
           ) : (
@@ -77,8 +79,8 @@ export function OverviewPanel({ c, day, dayMs }: PanelProps) {
           )}
           {c.lastElection && (
             <p className="small">
-              Son seçim ({formatGameDate(c.lastElection.day, false)}): {pct(c.lastElection.vote)} ·{' '}
-              {c.lastElection.won ? 'kazanıldı' : 'kaybedildi'}
+              Son seçim ({formatGameDate(c.lastElection.day, false)}): {winner?.short ?? '?'} kazandı,{' '}
+              {pct(c.lastElection.results.find((r) => r.partyId === c.lastElection!.winnerPartyId)?.vote ?? 0)} oy
             </p>
           )}
         </section>
