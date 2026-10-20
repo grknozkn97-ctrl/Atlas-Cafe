@@ -2,6 +2,7 @@
  * Oyuncunun parti içi kariyeri: üyelik, partinin güveni, medya çalışmaları, kurultay yarışı ve parti değiştirme.
  * Genel başkanlık kendiliğinden gelmez: ya kendi partini kurarsın ya da güven kazanıp kurultayı kazanırsın.
  */
+import { ensureCity } from './city';
 import { endOffice, refreshOffers } from './offices';
 import { formatGameDate } from './constants';
 import type { Rng } from './ministers';
@@ -236,6 +237,6 @@ export function playerView(p: Player | null | undefined): PlayerView | null {
     office: p.office ?? null,
     offers: p.offers ?? [],
     stats: p.stats ?? { media: 0 },
-    town: p.town ? structuredClone(p.town) : null,
+    town: p.town ? (ensureCity(p.town), structuredClone(p.town)) : null,
   };
 }

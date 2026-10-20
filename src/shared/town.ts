@@ -9,173 +9,9 @@ import { localPoll } from './local';
 import { generateMinister, type Rng } from './ministers';
 import { endOffice, mayorFromPlayer } from './offices';
 import { ActionError, addNews, clamp } from './sim';
-import type { BuildingId, Contact, CountryState, NetworkId, Party, RankId, Town, TownEvent } from './types';
+import { SERVICES, analyze, bulldoze, canPlace, countServices, createCity, ensureCity, paintRoad, paintZone, placeService, roadCost, simulate, uncoveredBuilding, zoneCount } from './city';
+import type { City, Contact, CountryState, NetworkId, Party, RankId, ServiceId, Town, TownEvent } from './types';
 import type { Player, World } from './world';
-
-// ---------------------------------------------------------------- binalar
-
-export interface BuildingSpec {
-  label: string;
-  icon: string;
-  desc: string;
-  /** Seviye 1'in maliyeti; sonraki seviyeler katlanarak artar */
-  money: number;
-  materials: number;
-  days: number;
-  max: number;
-  /** Aynı türden en fazla kaç bina olabilir */
-  limit: number;
-  /** Bu binanın çevre kazandırdığı kesim */
-  network?: NetworkId;
-  /** Seviyeye göre etkisinin kısa açıklaması */
-  effect: (level: number) => string;
-}
-
-export const BUILDINGS: Record<BuildingId, BuildingSpec> = {
-  belediye: {
-    label: 'Belediye binası',
-    icon: '🏛️',
-    desc: 'Şehrin kalbi. Seviyesi diğer binaların ulaşabileceği seviyeyi ve açılan arsa sayısını belirler.',
-    money: 400,
-    materials: 200,
-    days: 12,
-    max: 12,
-    limit: 1,
-    network: 'burokrasi',
-    effect: (l) => `${slotCount(l)} arsa açık, diğer binalar en fazla ${l + 1}. seviye`,
-  },
-  konut: {
-    label: 'Konut bölgesi',
-    icon: '🏘️',
-    desc: 'Evler ve apartmanlar. Şehrin barındırabileceği nüfusu artırır.',
-    money: 150,
-    materials: 120,
-    days: 6,
-    max: 14,
-    limit: 3,
-    effect: (l) => `+${fmt(housingOf(l))} kişilik konut`,
-  },
-  carsi: {
-    label: 'Çarşı',
-    icon: '🛍️',
-    desc: 'Dükkânlar ve pazar yeri. Kasaya vergi, şehre iş getirir; esnafla tanışırsın.',
-    money: 200,
-    materials: 80,
-    days: 6,
-    max: 12,
-    limit: 1,
-    network: 'esnaf',
-    effect: (l) => `+${Math.round(l * 12)} bin ₺/gün, ${fmt(l * 1200)} iş`,
-  },
-  sanayi: {
-    label: 'Sanayi sitesi',
-    icon: '🏭',
-    desc: 'Atölye ve fabrikalar. İnşaat malzemesi ve iş üretir ama havayı kirletir.',
-    money: 250,
-    materials: 60,
-    days: 8,
-    max: 12,
-    limit: 1,
-    network: 'isDunyasi',
-    effect: (l) => `+${l * 12} ton malzeme/gün, ${fmt(l * 2000)} iş, memnuniyet −${(l * 1.5).toFixed(1)}`,
-  },
-  okul: {
-    label: 'Okul',
-    icon: '🏫',
-    desc: 'Eğitim aileleri memnun eder; öğretmen ve akademisyenlerle tanışırsın.',
-    money: 300,
-    materials: 150,
-    days: 10,
-    max: 10,
-    limit: 1,
-    network: 'akademi',
-    effect: (l) => `memnuniyet +${(l * 2.5).toFixed(1)}`,
-  },
-  saglik: {
-    label: 'Sağlık merkezi',
-    icon: '🏥',
-    desc: 'Sağlık ocağından hastaneye. Memnuniyeti ve nüfus artışını yükseltir.',
-    money: 350,
-    materials: 150,
-    days: 10,
-    max: 10,
-    limit: 1,
-    network: 'akademi',
-    effect: (l) => `memnuniyet +${(l * 3.5).toFixed(1)}`,
-  },
-  park: {
-    label: 'Park',
-    icon: '🌳',
-    desc: 'Yeşil alan ucuzdur ve halkı mutlu eder.',
-    money: 120,
-    materials: 40,
-    days: 4,
-    max: 10,
-    limit: 2,
-    effect: (l) => `memnuniyet +${l * 3}`,
-  },
-  meydan: {
-    label: 'Kent meydanı',
-    icon: '🎪',
-    desc: 'Miting ve halk buluşmaları burada yapılır. Nüfuz ve sendikalarla bağ kazandırır.',
-    money: 250,
-    materials: 120,
-    days: 8,
-    max: 10,
-    limit: 1,
-    network: 'sendika',
-    effect: (l) => `nüfuz +${(l * 0.2).toFixed(1)}/gün, memnuniyet +${l * 2}`,
-  },
-  basin: {
-    label: 'Basın merkezi',
-    icon: '📡',
-    desc: 'Yerel gazete ve televizyon. Tanınırlığını artırır, medyayla tanışırsın.',
-    money: 300,
-    materials: 100,
-    days: 8,
-    max: 10,
-    limit: 1,
-    network: 'medya',
-    effect: (l) => `tanınırlık +${(l * 0.9).toFixed(1)}/ay, nüfuz +${(l * 0.2).toFixed(1)}/gün`,
-  },
-  parti: {
-    label: 'Parti binası',
-    icon: '🚩',
-    desc: 'Partinin ilçe teşkilatı. Nüfuz üretir, parti içinde yükselmeni sağlar.',
-    money: 200,
-    materials: 100,
-    days: 8,
-    max: 10,
-    limit: 1,
-    network: 'parti',
-    effect: (l) => `nüfuz +${(l * 0.4).toFixed(1)}/gün, partinin güveni +${(l * 0.6).toFixed(1)}/ay`,
-  },
-  emniyet: {
-    label: 'Emniyet müdürlüğü',
-    icon: '🚓',
-    desc: 'Güvenlik memnuniyeti artırır; bürokratlarla tanışırsın.',
-    money: 300,
-    materials: 150,
-    days: 10,
-    max: 10,
-    limit: 1,
-    network: 'burokrasi',
-    effect: (l) => `memnuniyet +${l * 2}`,
-  },
-};
-
-export const BUILDING_IDS = Object.keys(BUILDINGS) as BuildingId[];
-
-/** Toplam arsa sayısı (belediye dahil) */
-export const MAX_SLOTS = 14;
-
-export function slotCount(belediyeLevel: number) {
-  return Math.min(MAX_SLOTS, 4 + belediyeLevel * 1);
-}
-
-function housingOf(level: number) {
-  return Math.round(level * 2500 + level * level * 120);
-}
 
 export function fmt(n: number) {
   if (n >= 1e6) return `${(n / 1e6).toFixed(1).replace('.', ',')} milyon`;
@@ -183,19 +19,20 @@ export function fmt(n: number) {
   return Math.round(n).toLocaleString('tr-TR');
 }
 
-export function upgradeCost(b: BuildingId, toLevel: number) {
-  const s = BUILDINGS[b];
-  const k = toLevel - 1;
-  return {
-    money: Math.round(s.money * 1.65 ** k),
-    materials: Math.round(s.materials * 1.55 ** k),
-    days: Math.round(s.days * 1.25 ** k),
-  };
-}
-
-export function levelOf(t: Town, b: BuildingId) {
-  return t.slots.reduce((s, x) => s + (x.building === b ? x.level : 0), 0);
-}
+/** Hizmet binalarının çevre kazandırdığı kesimler */
+const SERVICE_NETWORK: Partial<Record<ServiceId, NetworkId>> = {
+  belediye: 'burokrasi',
+  polis: 'burokrasi',
+  itfaiye: 'burokrasi',
+  okul: 'akademi',
+  universite: 'akademi',
+  saglikOcagi: 'akademi',
+  hastane: 'akademi',
+  meydan: 'sendika',
+  basin: 'medya',
+  parti: 'parti',
+};
+export const serviceNetwork = (s: ServiceId) => SERVICE_NETWORK[s];
 
 // ---------------------------------------------------------------- çevre
 
@@ -250,69 +87,6 @@ function contactsIn(t: Town, g: NetworkId) {
   return t.contacts.filter((c) => c.group === g).length;
 }
 
-// ---------------------------------------------------------------- ekonomi
-
-const TAX = {
-  dusuk: { label: 'Düşük', mult: 0.6, mood: 6 },
-  orta: { label: 'Orta', mult: 1, mood: 0 },
-  yuksek: { label: 'Yüksek', mult: 1.45, mood: -10 },
-};
-export const TAX_LABELS = { dusuk: TAX.dusuk.label, orta: TAX.orta.label, yuksek: TAX.yuksek.label };
-
-export function capacity(t: Town) {
-  return 3500 + t.slots.reduce((s, x) => s + (x.building === 'konut' ? housingOf(x.level) : 0), 0);
-}
-
-export function jobs(t: Town) {
-  const L = (b: BuildingId) => levelOf(t, b);
-  return 1500 + L('carsi') * 1200 + L('sanayi') * 2000 + (L('okul') + L('saglik') + L('emniyet') + L('belediye')) * 350 + L('basin') * 250;
-}
-
-export function unemployment(t: Town) {
-  const work = t.pop * 0.42;
-  return clamp((work - jobs(t)) / Math.max(1, work), 0, 0.6);
-}
-
-/** Rütbe çarpanı: il merkezi ve sonrası daha büyük bütçe yönetir. */
-function rankMult(t: Town) {
-  return t.rank === 'ilce' ? 1 : t.rank === 'il' ? 1.5 : 1.8;
-}
-
-/** Günlük gelir, gider ve üretimin dökümü. */
-export function economy(t: Town) {
-  const L = (b: BuildingId) => levelOf(t, b);
-  const esnaf = contactsIn(t, 'esnaf');
-  const taxIncome = (t.pop / 1000) * 4 * TAX[t.tax].mult * (1 - unemployment(t) * 0.8);
-  const trade = L('carsi') * 12 * (1 + esnaf * 0.05);
-  const industry = L('sanayi') * 6;
-  const income = (taxIncome + trade + industry) * rankMult(t);
-  const upkeep = t.slots.reduce((s, x) => s + x.level ** 1.3, 0) * 1.6;
-  const materials = 10 + L('sanayi') * 12;
-  const influence = 0.3 + L('parti') * 0.4 + L('meydan') * 0.2 + L('basin') * 0.2;
-  return { taxIncome, trade, industry, income, upkeep, net: income - upkeep, materials, influence };
-}
-
-/** Memnuniyetin oturmaya çalıştığı değer ve nedenleri. */
-export function happinessTarget(t: Town) {
-  const L = (b: BuildingId) => levelOf(t, b);
-  const crowd = t.pop / capacity(t);
-  const parts = [
-    { label: 'Temel', value: 53 },
-    { label: 'Parklar', value: L('park') * 3 },
-    { label: 'Sağlık', value: L('saglik') * 3.5 },
-    { label: 'Eğitim', value: L('okul') * 2.5 },
-    { label: 'Meydan', value: L('meydan') * 2 },
-    { label: 'Güvenlik', value: L('emniyet') * 2 },
-    { label: 'Vergi', value: TAX[t.tax].mood },
-    { label: 'Sanayi kirliliği', value: -L('sanayi') * 1.5 },
-    { label: 'İşsizlik', value: -unemployment(t) * 70 },
-    { label: 'Kalabalık', value: crowd > 0.97 ? -8 : 0 },
-    { label: 'Makamın beklentisi', value: -RANK_ORDER.indexOf(t.rank) * 5 },
-    { label: 'Büyüyen şehrin beklentisi', value: -Math.max(0, Math.log10(t.pop / 5000)) * 16 },
-  ];
-  return { value: clamp(parts.reduce((s, p) => s + p.value, 0), 0, 100), parts: parts.filter((p) => p.value !== 0) };
-}
-
 // ---------------------------------------------------------------- kariyer
 
 export interface RankSpec {
@@ -347,26 +121,36 @@ export interface Requirement {
 
 type PlayerLike = Pick<Player, 'fame' | 'membership' | 'partyId' | 'character'>;
 
+function hasBasics(t: Town) {
+  const c = t.city;
+  return (countServices(c, 'saglikOcagi') + countServices(c, 'hastane') > 0) && countServices(c, 'polis') > 0 && countServices(c, 'itfaiye') > 0 && countServices(c, 'okul') + countServices(c, 'universite') > 0;
+}
+
+function basicsHave(t: Town) {
+  const c = t.city;
+  const n = [countServices(c, 'saglikOcagi') + countServices(c, 'hastane'), countServices(c, 'polis'), countServices(c, 'itfaiye'), countServices(c, 'okul') + countServices(c, 'universite')];
+  return `${n.filter((x) => x > 0).length}/4`;
+}
+
 export function requirements(t: Town, pl: PlayerLike, c: CountryState): Requirement[] {
   const next = nextRank(t.rank);
-  const bel = levelOf(t, 'belediye');
   const fame = pl.fame ?? 0;
   const trust = pl.membership?.trust ?? 0;
   const r = (label: string, ok: boolean, have: string): Requirement => ({ label, ok, have });
   switch (next) {
     case 'il':
       return [
-        r('Belediye binası 4. seviye', bel >= 4, `${bel}. seviye`),
-        r('Nüfus 12 bin', t.pop >= 12000, fmt(t.pop)),
+        r('Nüfus 8 bin', t.pop >= 8000, fmt(t.pop)),
         r('Memnuniyet %60', t.happiness >= 60, `%${Math.round(t.happiness)}`),
+        r('Sağlık, karakol, itfaiye ve okul', hasBasics(t), basicsHave(t)),
         r('Çevrende 6 tanıdık', t.contacts.length >= 6, `${t.contacts.length}`),
         r('Tanınırlık 25', fame >= 25, `${Math.round(fame)}`),
         r(`${RANKS.il.influence} nüfuz`, t.influence >= RANKS.il.influence, `${Math.floor(t.influence)}`),
       ];
     case 'mv':
       return [
-        r('Belediye binası 6. seviye', bel >= 6, `${bel}. seviye`),
-        r('Nüfus 25 bin', t.pop >= 25000, fmt(t.pop)),
+        r('Nüfus 20 bin', t.pop >= 20000, fmt(t.pop)),
+        r('Hastane ve üniversite', countServices(t.city, 'hastane') > 0 && countServices(t.city, 'universite') > 0, `${countServices(t.city, 'hastane')} hastane, ${countServices(t.city, 'universite')} üniversite`),
         r('Çevrende 12 tanıdık', t.contacts.length >= 12, `${t.contacts.length}`),
         r('Partide 3 tanıdık', contactsIn(t, 'parti') >= 3, `${contactsIn(t, 'parti')}`),
         r('Tanınırlık 40', fame >= 40, `${Math.round(fame)}`),
@@ -467,7 +251,7 @@ function finishCampaign(world: World, player: Player, t: Town, rng: Rng) {
       player.office = { id: 'belediyeBaskani', provinceId: pv.id, sinceDay: day, goal: null, done: 0 };
     }
     player.fame = clamp((player.fame ?? 0) + 8, 0, 100);
-    log(t, day, `🏙️ Seçimi kazandın! Artık ${pv?.name ?? t.name} il belediye başkanısın. Gelirler %50 arttı.`, 'iyi');
+    log(t, day, `🏙️ Seçimi kazandın! Artık ${pv?.name ?? t.name} il belediye başkanısın.`, 'iyi');
     addNews(c, day, `${name}, ${pv?.name} belediye başkanlığını kazandı.`, 'iyi');
   } else if (camp.rank === 'mv') {
     player.fame = clamp((player.fame ?? 0) + 12, 0, 100);
@@ -503,6 +287,18 @@ const fame = (x: Ctx, v: number) => (x.player.fame = clamp((x.player.fame ?? 0) 
 const mood = (x: Ctx, v: number) => (x.t.happiness = clamp(x.t.happiness + v, 0, 100));
 const trust = (x: Ctx, v: number) => x.player.membership && (x.player.membership.trust = clamp(x.player.membership.trust + v, 0, 100));
 const net = (x: Ctx, g: NetworkId, v: number) => gainNetwork(x.t, g, v, x.day, x.rng, x.c.names);
+
+/** Sanayi binalarını büyütür (yatırımcı olayı) */
+function growIndustry(x: Ctx, k: number) {
+  const c = x.t.city;
+  let n = 0;
+  for (let i = 0; i < c.zone.length && n < k; i++)
+    if (c.zone[i] === 3 && c.lvl[i] >= 1 && c.lvl[i] < 4) {
+      c.lvl[i] += 1;
+      n++;
+    }
+  return n;
+}
 
 const EVENTS: EventDef[] = [
   {
@@ -585,14 +381,13 @@ const EVENTS: EventDef[] = [
     icon: '🏭',
     title: 'Fabrika kurmak isteyen yatırımcı',
     text: () => 'Bir yatırımcı şehre fabrika kurmak istiyor. 1.500 kişiye iş, ama dere kenarında ve çevreciler tedirgin.',
-    when: (x) => levelOf(x.t, 'sanayi') >= 1,
+    when: (x) => zoneCount(x.t.city, 3) >= 4,
     options: [
       {
         label: 'İzin ver',
-        desc: 'Sanayi sitesi bir seviye büyür, iş dünyası memnun; memnuniyet −3.',
+        desc: 'Sanayi bölgesinde 6 bina büyür, iş dünyası memnun; kirlilik artar.',
         apply: (x) => {
-          const s = x.t.slots.find((y) => y.building === 'sanayi');
-          if (s && s.level < BUILDINGS.sanayi.max) s.level += 1;
+          growIndustry(x, 6);
           net(x, 'isDunyasi', 6);
           mood(x, -3);
           return 'Fabrikanın temeli atıldı.';
@@ -603,8 +398,7 @@ const EVENTS: EventDef[] = [
         desc: 'Yarı yarıya ihtimalle yatırımcı kabul eder; ederse herkes kazanır.',
         apply: (x) => {
           if (x.rng() < 0.5) {
-            const s = x.t.slots.find((y) => y.building === 'sanayi');
-            if (s && s.level < BUILDINGS.sanayi.max) s.level += 1;
+            growIndustry(x, 4);
             net(x, 'isDunyasi', 3);
             net(x, 'akademi', 3);
             return 'Yatırımcı arıtma şartını kabul etti.';
@@ -629,7 +423,7 @@ const EVENTS: EventDef[] = [
     icon: '✊',
     title: 'Sanayide grev',
     text: () => 'Sanayi sitesindeki işçiler ücret zammı için greve çıktı. İki taraf da belediyenin tavrını bekliyor.',
-    when: (x) => levelOf(x.t, 'sanayi') >= 2,
+    when: (x) => zoneCount(x.t.city, 3) >= 10,
     options: [
       {
         label: 'İşçilerin yanında dur',
@@ -739,33 +533,44 @@ const EVENTS: EventDef[] = [
     fallback: 2,
   },
   {
-    id: 'gocDalgasi',
-    icon: '🧳',
-    title: 'Göç dalgası',
-    text: () => 'Komşu ilçelerden iş arayan aileler şehrine akın ediyor.',
-    when: (x) => x.t.pop < capacity(x.t) * 0.9,
+    id: 'yangin',
+    icon: '🔥',
+    title: 'Büyük yangın',
+    text: () => 'İtfaiyenin yetişemediği bir mahallede yangın çıktı; birkaç bina kül oldu.',
+    when: (x) => zoneCount(x.t.city, 1) >= 6 && countServices(x.t.city, 'itfaiye') === 0,
     options: [
       {
-        label: 'Kapıları aç',
-        desc: 'Nüfus +%8; işsizlik artabilir.',
+        label: 'Afetzedelere yardım et',
+        desc: '400 bin ₺; halk minnettar.',
         apply: (x) => {
-          x.t.pop = Math.min(capacity(x.t), x.t.pop * 1.08);
-          net(x, 'sendika', 2);
-          return 'Şehir hızla büyüyor.';
+          x.t.money -= 400;
+          mood(x, 3);
+          burn(x, 3);
+          return 'Aileler geçici konutlara yerleşti. İtfaiye kurmayı düşün.';
         },
       },
       {
-        label: 'Sadece konut varsa al',
-        desc: 'Nüfus +%3, sorun çıkmaz.',
+        label: 'Sigortaya bırak',
+        desc: 'Para harcamazsın, memnuniyet düşer.',
         apply: (x) => {
-          x.t.pop = Math.min(capacity(x.t), x.t.pop * 1.03);
-          return 'Kontrollü bir büyüme oldu.';
+          mood(x, -6);
+          burn(x, 3);
+          return 'Halk belediyenin ilgisizliğine kızgın.';
         },
       },
     ],
     fallback: 1,
   },
 ];
+
+function burn(x: Ctx, k: number) {
+  const c = x.t.city;
+  const a = analyze(c);
+  for (let j = 0; j < k; j++) {
+    const i = uncoveredBuilding(c, a, 'itfaiye', x.rng);
+    if (i >= 0) c.lvl[i] = 0;
+  }
+}
 
 const EVENT_BY_ID = new Map(EVENTS.map((e) => [e.id, e]));
 
@@ -824,7 +629,7 @@ export interface TownActionSpec {
   apply: (x: Ctx, level: number) => string;
 }
 
-export const TOWN_ACTIONS: Partial<Record<BuildingId, TownActionSpec[]>> = {
+export const TOWN_ACTIONS: Partial<Record<ServiceId, TownActionSpec[]>> = {
   belediye: [
     {
       id: 'halkGunu',
@@ -838,32 +643,32 @@ export const TOWN_ACTIONS: Partial<Record<BuildingId, TownActionSpec[]>> = {
         return 'Yüzlerce vatandaşı dinledin.';
       },
     },
-  ],
-  carsi: [
     {
       id: 'esnafZiyareti',
       label: 'Esnaf ziyareti',
-      desc: 'Dükkân dükkân gez, çay iç. Esnafla bağ kurarsın.',
+      desc: 'Ticaret bölgelerinde dükkân dükkân gez: esnafla bağ kurarsın.',
       influence: 4,
       cooldown: 12,
-      apply: (x, l) => {
-        net(x, 'esnaf', 3 + l * 0.5);
+      apply: (x) => {
+        const k = zoneCount(x.t.city, 2);
+        if (!k) return 'Ziyaret edecek dükkân yok; önce ticaret bölgesi aç.';
+        net(x, 'esnaf', 3 + Math.min(6, k / 8));
         mood(x, 1);
         return 'Çarşıda sıcak karşılandın.';
       },
     },
-  ],
-  sanayi: [
     {
       id: 'yatirimci',
       label: 'Yatırımcı ağırla',
-      desc: 'Sanayicilerle yemek: iş dünyasında tanıdık ve malzeme bağışı.',
+      desc: 'Sanayicilerle yemek: iş dünyasında tanıdık ve bağış.',
       influence: 10,
       cooldown: 30,
-      apply: (x, l) => {
-        net(x, 'isDunyasi', 4 + l * 0.6);
-        x.t.materials += 60 + l * 20;
-        return `Sanayiciler ${60 + l * 20} ton malzeme bağışladı.`;
+      apply: (x) => {
+        const k = zoneCount(x.t.city, 3);
+        if (!k) return 'Şehirde sanayi yok; yatırımcılar ilgilenmedi.';
+        net(x, 'isDunyasi', 4 + Math.min(6, k / 8));
+        x.t.money += 150 + k * 8;
+        return `Sanayiciler belediyeye ${150 + k * 8} bin ₺ bağışladı.`;
       },
     },
   ],
@@ -881,7 +686,7 @@ export const TOWN_ACTIONS: Partial<Record<BuildingId, TownActionSpec[]>> = {
       },
     },
   ],
-  saglik: [
+  hastane: [
     {
       id: 'tarama',
       label: 'Ücretsiz sağlık taraması',
@@ -895,7 +700,7 @@ export const TOWN_ACTIONS: Partial<Record<BuildingId, TownActionSpec[]>> = {
       },
     },
   ],
-  park: [
+  buyukPark: [
     {
       id: 'konser',
       label: 'Parkta konser',
@@ -955,7 +760,7 @@ export const TOWN_ACTIONS: Partial<Record<BuildingId, TownActionSpec[]>> = {
       },
     },
   ],
-  emniyet: [
+  polis: [
     {
       id: 'asayis',
       label: 'Asayiş denetimi',
@@ -971,12 +776,12 @@ export const TOWN_ACTIONS: Partial<Record<BuildingId, TownActionSpec[]>> = {
   ],
 };
 
-export function townAction(world: World, player: Player, b: BuildingId, actionId: string, rng: Rng): string {
+export function townAction(world: World, player: Player, b: ServiceId, actionId: string, rng: Rng): string {
   const t = requireTown(player);
   const spec = TOWN_ACTIONS[b]?.find((a) => a.id === actionId);
   if (!spec) throw new ActionError('Bilinmeyen eylem.');
-  const level = levelOf(t, b);
-  if (level < 1) throw new ActionError(`Önce ${BUILDINGS[b].label.toLocaleLowerCase('tr')} kurmalısın.`);
+  const level = countServices(t.city, b);
+  if (level < 1) throw new ActionError(`Önce ${SERVICES[b].label.toLocaleLowerCase('tr')} kurmalısın.`);
   const key = `${b}:${actionId}`;
   const day = world.day;
   if ((t.cooldowns[key] ?? 0) > day) throw new ActionError(`${spec.label} için ${formatGameDate(t.cooldowns[key])} tarihini bekle.`);
@@ -986,7 +791,7 @@ export function townAction(world: World, player: Player, b: BuildingId, actionId
   t.influence -= spec.influence ?? 0;
   t.cooldowns[key] = day + spec.cooldown;
   const msg = spec.apply({ world, player, t, c: world.countries[t.countryId], rng, day }, level);
-  log(t, day, `${BUILDINGS[b].icon} ${spec.label}: ${msg}`, 'notr');
+  log(t, day, `${SERVICES[b].icon} ${spec.label}: ${msg}`, 'notr');
   return msg;
 }
 
@@ -1018,14 +823,7 @@ export function favorEffect(g: NetworkId, t: Town) {
         },
       };
     case 'burokrasi':
-      return {
-        text: t.construction ? 'süren inşaatın kalan süresi yarıya iner' : 'nüfuz +6 (inşaat yokken)',
-        apply: (x: Ctx) => {
-          const k = x.t.construction;
-          if (k) k.endDay = x.day + Math.ceil((k.endDay - x.day) / 2);
-          else x.t.influence += 6;
-        },
-      };
+      return { text: `valilikten +${400 * r} bin ₺ ödenek`, apply: (x: Ctx) => void (x.t.money += 400 * r) };
     case 'parti':
       return { text: 'partinin güveni +5, nüfuz +5', apply: (x: Ctx) => void (trust(x, 5), (x.t.influence += 5)) };
   }
@@ -1056,6 +854,7 @@ export function askFavor(world: World, player: Player, contactId: string, rng: R
 
 function requireTown(player: Player): Town {
   if (!player.town) throw new ActionError('Önce bir belediye kur.');
+  ensureCity(player.town);
   return player.town;
 }
 
@@ -1065,129 +864,92 @@ function log(t: Town, day: number, text: string, kind: 'iyi' | 'kotu' | 'notr') 
 }
 
 export function createTown(c: CountryState, provinceId: string, name: string, day: number): Town {
-  const slots = Array.from({ length: MAX_SLOTS }, () => ({ building: null, level: 0 })) as Town['slots'];
-  slots[0] = { building: 'belediye', level: 1 };
-  slots[1] = { building: 'konut', level: 1 };
-  slots[2] = { building: 'carsi', level: 1 };
+  let seed = 0;
+  for (const ch of provinceId) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
   return {
     id: `town-${provinceId}-${day}`,
     name,
     countryId: c.id,
     provinceId,
     foundedDay: day,
-    slots,
-    construction: null,
-    money: 600,
-    materials: 300,
-    pop: 5000,
-    happiness: 62,
+    city: createCity(seed),
+    money: 20000,
+    pop: 0,
+    happiness: 60,
     influence: 10,
-    tax: 'orta',
     network: { isDunyasi: 0, esnaf: 0, sendika: 0, akademi: 0, medya: 0, burokrasi: 0, parti: 0 },
     contacts: [],
     rank: 'ilce',
     campaign: null,
     cooldowns: {},
     event: null,
-    nextEventDay: day + 25,
+    nextEventDay: day + 40,
     later: [],
-    log: [{ day, text: `🏡 ${name} belediye başkanı olarak göreve başladın.`, kind: 'iyi' }],
-    popHistory: [5000],
+    log: [{ day, text: `🏡 ${name} belediye başkanı olarak göreve başladın. Önce yol çiz, sonra konut, ticaret ve sanayi bölgeleri aç; elektrik ve su getir.`, kind: 'iyi' }],
+    popHistory: [0],
   };
 }
 
 export function foundTown(world: World, player: Player, provinceId: string, name: string): string {
   if (!player.character) throw new ActionError('Önce karakterini oluştur.');
   if (!player.countryId || !player.membership) throw new ActionError('Önce bir partiye katıl.');
-  if (player.town) throw new ActionError('Zaten bir belediyen var.');
+  if (player.town?.city) throw new ActionError('Zaten bir belediyen var.');
   const c = world.countries[player.countryId];
   const pv = c.provinces.find((x) => x.id === provinceId);
   if (!pv) throw new ActionError('İl bulunamadı.');
   const clean = String(name ?? '').trim().slice(0, 24) || `${pv.name} Merkez`;
   player.town = createTown(c, pv.id, clean, world.day);
-  // Belediye ile parti görevleri birbirine karışmasın.
   player.offers = [];
   addNews(c, world.day, `${player.character.name}, ${clean} belediye başkanı oldu.`, 'notr');
-  return `${clean} senin. İlk iş: boş arsalara bina kur, belediye binanı büyüt.`;
+  return `${clean} senin. Yol çiz, bölgeleri imara aç, elektrik ve su getir.`;
 }
 
-export function canBuild(t: Town, slot: number, b: BuildingId): string | null {
-  const bel = levelOf(t, 'belediye');
-  if (slot < 0 || slot >= slotCount(bel)) return 'Bu arsa henüz açılmadı. Belediye binasını büyüt.';
-  if (t.slots[slot].building) return 'Arsa dolu.';
-  const count = t.slots.filter((x) => x.building === b).length;
-  if (count >= BUILDINGS[b].limit) return `En fazla ${BUILDINGS[b].limit} ${BUILDINGS[b].label.toLocaleLowerCase('tr')} olabilir.`;
-  if (b === 'parti' && !t.contacts.length && bel < 2) return 'Parti binası için belediye binası 2. seviye olmalı.';
-  return null;
-}
+const MAX_CELLS = 600;
 
-export function build(world: World, player: Player, slot: number, b: BuildingId): string {
+export function cityPaint(player: Player, tool: 'road' | 'zone' | 'bulldoze', cells: number[], zone = 0): string {
   const t = requireTown(player);
-  if (!BUILDINGS[b]) throw new ActionError('Bilinmeyen bina.');
-  const err = canBuild(t, slot, b);
-  if (err) throw new ActionError(err);
-  return startConstruction(world, t, slot, b, 1);
-}
-
-export function upgrade(world: World, player: Player, slot: number): string {
-  const t = requireTown(player);
-  const s = t.slots[slot];
-  if (!s?.building) throw new ActionError('Burada bina yok.');
-  const spec = BUILDINGS[s.building];
-  if (s.level >= spec.max) throw new ActionError('Bina en üst seviyede.');
-  const bel = levelOf(t, 'belediye');
-  if (s.building !== 'belediye' && s.level + 1 > bel + 1) throw new ActionError(`Önce belediye binasını ${s.level}. seviyeye çıkar.`);
-  return startConstruction(world, t, slot, s.building, s.level + 1);
-}
-
-function startConstruction(world: World, t: Town, slot: number, b: BuildingId, toLevel: number): string {
-  if (t.construction) throw new ActionError('Aynı anda tek inşaat yürütülebilir. Önce süren inşaatın bitmesini bekle.');
-  const cost = upgradeCost(b, toLevel);
-  if (t.money < cost.money) throw new ActionError(`Kasada ${cost.money} bin ₺ gerekiyor (var: ${Math.floor(t.money)}).`);
-  if (t.materials < cost.materials) throw new ActionError(`${cost.materials} ton malzeme gerekiyor (var: ${Math.floor(t.materials)}).`);
-  t.money -= cost.money;
-  t.materials -= cost.materials;
-  t.construction = { slot, building: b, toLevel, startDay: world.day, endDay: world.day + cost.days };
-  return `${BUILDINGS[b].label} ${toLevel === 1 ? 'inşaatı' : `${toLevel}. seviye çalışması`} başladı: ${cost.days} gün.`;
-}
-
-export function cancelConstruction(player: Player): string {
-  const t = requireTown(player);
-  const k = t.construction;
-  if (!k) throw new ActionError('Süren inşaat yok.');
-  const cost = upgradeCost(k.building, k.toLevel);
-  t.money += cost.money * 0.7;
-  t.materials += cost.materials * 0.7;
-  t.construction = null;
-  return 'İnşaat iptal edildi; maliyetin %70’i geri döndü.';
-}
-
-/** Çarşıda malzeme alıp satma (bin ₺ / ton) */
-export const MATERIAL_BUY = 3;
-export const MATERIAL_SELL = 1.4;
-
-export function trade(player: Player, tons: number): string {
-  const t = requireTown(player);
-  if (levelOf(t, 'carsi') < 1) throw new ActionError('Malzeme ticareti için çarşı gerekir.');
-  const n = Math.round(tons);
-  if (!n) return '';
-  if (n > 0) {
-    const cost = n * MATERIAL_BUY;
-    if (t.money < cost) throw new ActionError(`${n} ton için ${cost} bin ₺ gerekiyor.`);
+  const c = t.city;
+  const list = [...new Set((cells ?? []).filter((i) => Number.isInteger(i)))].slice(0, MAX_CELLS);
+  if (tool === 'road') {
+    const cost = roadCost(c, list);
+    if (cost > t.money) throw new ActionError(`Bu yol ${fmt(cost)} bin ₺ tutuyor; kasada ${fmt(Math.floor(t.money))} bin ₺ var.`);
+    const n = paintRoad(c, list);
     t.money -= cost;
-    t.materials += n;
-    return `${n} ton malzeme alındı (${cost} bin ₺).`;
+    return n ? `${n} karo yol yapıldı (${fmt(cost)} bin ₺).` : '';
   }
-  if (t.materials < -n) throw new ActionError('Depoda o kadar malzeme yok.');
-  t.materials += n;
-  t.money += -n * MATERIAL_SELL;
-  return `${-n} ton malzeme satıldı (+${Math.round(-n * MATERIAL_SELL)} bin ₺).`;
+  if (tool === 'zone') {
+    const z = Math.round(zone);
+    if (z < 0 || z > 4) throw new ActionError('Geçersiz bölge.');
+    const n = paintZone(c, list, z);
+    if (!n && z) return 'Bölgeler yola en fazla 3 karo uzaklıkta, boş karada açılabilir.';
+    return '';
+  }
+  const refund = bulldoze(c, list);
+  t.money += refund;
+  return refund ? `Bina yıkıldı; ${fmt(refund)} bin ₺ geri döndü.` : '';
 }
 
-export function setTax(player: Player, tax: Town['tax']) {
+export function cityPlace(world: World, player: Player, type: ServiceId, x: number, y: number): string {
   const t = requireTown(player);
-  if (!(tax in TAX)) throw new ActionError('Geçersiz vergi.');
-  t.tax = tax;
+  const spec = SERVICES[type];
+  if (!spec || spec.fixed) throw new ActionError('Bu bina kurulamaz.');
+  const err = canPlace(t.city, type, Math.round(x), Math.round(y));
+  if (err) throw new ActionError(err);
+  if (t.money < spec.cost) throw new ActionError(`${spec.label} ${fmt(spec.cost)} bin ₺ tutuyor.`);
+  t.money -= spec.cost;
+  placeService(t.city, type, Math.round(x), Math.round(y), `${type}-${world.day}-${t.city.services.length}`);
+  log(t, world.day, `${spec.icon} ${spec.label} hizmete girdi.`, 'iyi');
+  return `${spec.label} kuruldu.`;
+}
+
+export function cityBudget(player: Player, b: { tax?: number[]; power?: number; water?: number; svc?: Partial<City['budget']['svc']> }) {
+  const t = requireTown(player);
+  const bud = t.city.budget;
+  const cl = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Number(v) || 0));
+  if (b.tax) bud.tax = [0, 1, 2, 3].map((k) => Math.round(cl(b.tax![k] ?? bud.tax[k], 1, 29))) as City['budget']['tax'];
+  if (b.power !== undefined) bud.power = Math.round(cl(b.power, 0.5, 2) * 20) / 20;
+  if (b.water !== undefined) bud.water = Math.round(cl(b.water, 0.5, 2) * 20) / 20;
+  if (b.svc) for (const [k, v] of Object.entries(b.svc)) if (k in bud.svc) bud.svc[k as keyof typeof bud.svc] = Math.round(cl(v ?? 1, 0.5, 1.5) * 20) / 20;
 }
 
 // ---------------------------------------------------------------- günlük adım
@@ -1195,49 +957,43 @@ export function setTax(player: Player, tax: Town['tax']) {
 export function stepTown(world: World, player: Player, rng: Rng, isMonthStart: boolean) {
   const t = player.town;
   if (!t) return;
+  ensureCity(t);
   const c = world.countries[t.countryId];
   if (!c) return;
   const day = world.day;
   const x: Ctx = { world, player, t, c, rng, day };
-  // İnşaat
-  const k = t.construction;
-  if (k && day >= k.endDay) {
-    const s = t.slots[k.slot];
-    s.building = k.building;
-    s.level = k.toLevel;
-    t.construction = null;
-    log(t, day, `🏗️ ${BUILDINGS[k.building].label} ${k.toLevel}. seviyeye ulaştı.`, 'iyi');
+  const city = t.city;
+  simulate(city, rng);
+  const st = city.stats;
+  t.money += st.net;
+  t.pop = st.pop;
+  t.happiness += (st.happiness - t.happiness) * 0.2;
+  if (t.money < 0) t.happiness = clamp(t.happiness - 0.2, 0, 100);
+  // Nüfuz
+  const size = Math.min(1, 0.15 + st.pop / 8000);
+  const inf = 0.1 + city.services.reduce((s, v) => s + (SERVICES[v.type].influence ?? 0), 0) * size + Math.min(1, st.pop / 40000);
+  t.influence = Math.min(250, t.influence + inf);
+  // Çevre: hizmetler ve bölgeler tanıdık getirir
+  for (const sv of city.services) {
+    const g = SERVICE_NETWORK[sv.type];
+    if (g) gainNetwork(t, g, (sv.type === 'belediye' ? 0.06 : 0.1) * size, day, rng, c.names);
   }
-  // Ekonomi
-  const e = economy(t);
-  t.money += e.net;
-  t.materials += e.materials;
-  t.influence = Math.min(250, t.influence + e.influence);
-  if (t.money < 0) t.happiness = clamp(t.happiness - 0.3, 0, 100); // maaşlar gecikiyor
-  // Memnuniyet ve nüfus
-  const h = happinessTarget(t).value;
-  t.happiness += (h - t.happiness) * 0.05;
-  const cap = capacity(t);
-  const L = (b: BuildingId) => levelOf(t, b);
-  if (t.happiness >= 50 && t.pop < cap) {
-    t.pop += t.pop * 0.0045 * ((t.happiness - 45) / 20) * (1 + L('saglik') * 0.04);
-  } else if (t.happiness < 45) {
-    t.pop -= t.pop * 0.003 * ((45 - t.happiness) / 15);
+  const zc = zoneCount(city, 2);
+  const zi = zoneCount(city, 3);
+  const zo = zoneCount(city, 4);
+  if (zc) gainNetwork(t, 'esnaf', Math.min(0.15, zc * 0.002), day, rng, c.names);
+  if (zi) {
+    gainNetwork(t, 'isDunyasi', Math.min(0.12, zi * 0.0015), day, rng, c.names);
+    gainNetwork(t, 'sendika', Math.min(0.1, zi * 0.0015), day, rng, c.names);
   }
-  t.pop = Math.max(800, Math.min(t.pop, cap * 1.02));
-  // Çevre: binalar kendi kesimlerinden tanıdık getirir
-  for (const s of t.slots) {
-    const g = s.building && BUILDINGS[s.building].network;
-    if (g && s.level) gainNetwork(t, g, s.level * 0.06, day, rng, c.names);
-  }
-  if (L('sanayi') >= 2) gainNetwork(t, 'sendika', L('sanayi') * 0.02, day, rng, c.names);
+  if (zo) gainNetwork(t, 'isDunyasi', Math.min(0.08, zo * 0.0015), day, rng, c.names);
   for (const ct of t.contacts) ct.loyalty = Math.min(100, ct.loyalty + 0.15);
   // Gecikmeli sonuçlar
   for (const l of t.later.filter((l) => l.day <= day)) runLater(x, l.id);
   t.later = t.later.filter((l) => l.day > day);
   // Olaylar
   if (t.event && day >= t.event.deadline) resolveTownEvent(world, player, EVENT_BY_ID.get(t.event.defId)?.fallback ?? 0, rng);
-  if (!t.event && day >= t.nextEventDay) {
+  if (!t.event && day >= t.nextEventDay && st.pop > 500) {
     t.event = rollEvent(x);
     t.nextEventDay = day + 30 + Math.floor(rng() * 25);
   }
@@ -1245,10 +1001,12 @@ export function stepTown(world: World, player: Player, rng: Rng, isMonthStart: b
   if (t.campaign && day >= t.campaign.endDay) finishCampaign(world, player, t, rng);
   // Aylık
   if (isMonthStart) {
-    fame(x, L('basin') * 0.9 + (t.happiness - 55) / 40);
-    if (player.membership && !player.partyId) trust(x, L('parti') * 0.6);
+    const basin = countServices(city, 'basin');
+    fame(x, basin * 1.2 + (t.happiness - 55) / 40 + Math.min(1, st.pop / 50000));
+    if (player.membership && !player.partyId) trust(x, countServices(city, 'parti') * 1.5);
     t.popHistory.push(Math.round(t.pop));
     if (t.popHistory.length > 48) t.popHistory.shift();
+    if (st.net < 0 && t.money < 0) log(t, day, '⚠️ Kasa ekside: hizmet bütçelerini kıs ya da vergileri artır.', 'kotu');
   }
   // İl belediyesini yerel seçimde kaybeden ilçeye döner.
   if (t.rank === 'il') {

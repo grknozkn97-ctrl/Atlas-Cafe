@@ -152,7 +152,76 @@ export interface LocalElectionResult {
 
 // ---------------------------------------------------------------- şehir (belediye) oyunu
 
-export type BuildingId = 'belediye' | 'konut' | 'carsi' | 'sanayi' | 'okul' | 'saglik' | 'park' | 'meydan' | 'basin' | 'parti' | 'emniyet';
+export type ServiceId =
+  | 'belediye'
+  | 'saglikOcagi'
+  | 'hastane'
+  | 'polis'
+  | 'itfaiye'
+  | 'okul'
+  | 'universite'
+  | 'park'
+  | 'buyukPark'
+  | 'komur'
+  | 'gunes'
+  | 'ruzgar'
+  | 'suPompasi'
+  | 'meydan'
+  | 'basin'
+  | 'parti';
+
+/** Kapsama alanı olan hizmet türleri */
+export type CoverKind = 'saglik' | 'polis' | 'itfaiye' | 'egitim' | 'park';
+
+export interface CityService {
+  id: string;
+  type: ServiceId;
+  /** Sol üst karo */
+  x: number;
+  y: number;
+}
+
+/** Izgara şehir: her dizi n*n uzunluğunda */
+export interface City {
+  n: number;
+  seed: number;
+  /** 0 kara, 1 su */
+  terrain: number[];
+  road: number[];
+  /** 0 imarsız, 1 konut, 2 ticaret, 3 sanayi, 4 ofis */
+  zone: number[];
+  /** Bölgedeki binanın seviyesi 0-4 */
+  lvl: number[];
+  /** Hizmet binası sırası + 1 */
+  occ: number[];
+  services: CityService[];
+  budget: {
+    /** Konut, ticaret, sanayi, ofis vergisi (%) */
+    tax: [number, number, number, number];
+    /** Elektrik ve su fiyat çarpanı (1 = normal) */
+    power: number;
+    water: number;
+    /** Hizmet bütçesi çarpanı (0.5-1.5) */
+    svc: Record<CoverKind, number>;
+  };
+  stats: {
+    pop: number;
+    jobs: number;
+    workers: number;
+    powerProd: number;
+    powerUse: number;
+    waterProd: number;
+    waterUse: number;
+    /** Konut, ticaret, sanayi, ofis talebi (-1…1) */
+    demand: [number, number, number, number];
+    income: { label: string; value: number }[];
+    expense: { label: string; value: number }[];
+    net: number;
+    happiness: number;
+    buildings: number;
+    roads: number;
+  };
+}
 
 /** Çevre: oyuncunun tanıdıklarının geldiği kesimler */
 export type NetworkId = 'isDunyasi' | 'esnaf' | 'sendika' | 'akademi' | 'medya' | 'burokrasi' | 'parti';
@@ -160,10 +229,6 @@ export type NetworkId = 'isDunyasi' | 'esnaf' | 'sendika' | 'akademi' | 'medya' 
 /** Kariyer basamakları */
 export type RankId = 'ilce' | 'il' | 'mv' | 'genelBaskan' | 'hukumet';
 
-export interface TownSlot {
-  building: BuildingId | null;
-  level: number;
-}
 
 export interface Contact {
   id: string;
@@ -195,18 +260,15 @@ export interface Town {
   countryId: string;
   provinceId: string;
   foundedDay: number;
-  slots: TownSlot[];
-  construction: { slot: number; building: BuildingId; toLevel: number; startDay: number; endDay: number } | null;
+  /** 3B ızgara şehir */
+  city: City;
   /** Belediye kasası (bin ₺) */
   money: number;
-  /** İnşaat malzemesi (ton) */
-  materials: number;
   pop: number;
   /** Halkın memnuniyeti 0-100 */
   happiness: number;
   /** Siyasi nüfuz: eylemlerde ve adaylıkta harcanır */
   influence: number;
-  tax: 'dusuk' | 'orta' | 'yuksek';
   /** Her kesimde biriken ilişki puanı; eşikleri geçtikçe yeni tanıdıklar gelir */
   network: Record<NetworkId, number>;
   contacts: Contact[];
@@ -601,12 +663,10 @@ export type ClientMessage =
   | { type: 'media'; action: MediaAction; regionId?: string }
   | { type: 'challengeLeader' }
   | { type: 'foundTown'; provinceId: string; name: string }
-  | { type: 'townBuild'; slot: number; building: BuildingId }
-  | { type: 'townUpgrade'; slot: number }
-  | { type: 'townCancel' }
-  | { type: 'townAction'; building: BuildingId; action: string }
-  | { type: 'townTax'; tax: Town['tax'] }
-  | { type: 'townTrade'; tons: number }
+  | { type: 'cityPaint'; tool: 'road' | 'zone' | 'bulldoze'; zone?: number; cells: number[] }
+  | { type: 'cityPlace'; service: ServiceId; x: number; y: number }
+  | { type: 'cityBudget'; tax?: [number, number, number, number]; power?: number; water?: number; svc?: Partial<Record<CoverKind, number>> }
+  | { type: 'townAction'; building: ServiceId; action: string }
   | { type: 'townFavor'; contactId: string }
   | { type: 'townEvent'; option: number }
   | { type: 'runForOffice' }

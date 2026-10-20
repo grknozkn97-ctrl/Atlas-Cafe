@@ -11,7 +11,7 @@ import { ActionError, DIRECTIVES } from './sim';
 import type { ClientMessage } from './types';
 import { leaveCountry, type Player, type World } from './world';
 import { acceptOffer, declineOffer, endOffice } from './offices';
-import { askFavor, build, cancelConstruction, foundTown, resolveTownEvent, runForOffice, setTax, townAction, trade, upgrade } from './town';
+import { askFavor, cityBudget, cityPaint, cityPlace, foundTown, resolveTownEvent, runForOffice, townAction } from './town';
 
 export { playerView } from './career';
 
@@ -49,19 +49,15 @@ export function dispatch(world: World, player: Player, msg: ClientMessage, rng: 
       return 'Teklifi geri çevirdin. Parti biraz kırıldı (güven −1).';
     case 'foundTown':
       return foundTown(world, player, msg.provinceId, msg.name);
-    case 'townBuild':
-      return build(world, player, msg.slot, msg.building);
-    case 'townUpgrade':
-      return upgrade(world, player, msg.slot);
-    case 'townCancel':
-      return cancelConstruction(player);
+    case 'cityPaint':
+      return cityPaint(player, msg.tool, msg.cells, msg.zone);
+    case 'cityPlace':
+      return cityPlace(world, player, msg.service, msg.x, msg.y);
+    case 'cityBudget':
+      cityBudget(player, msg);
+      return;
     case 'townAction':
       return townAction(world, player, msg.building, msg.action, rng);
-    case 'townTax':
-      setTax(player, msg.tax);
-      return;
-    case 'townTrade':
-      return trade(player, msg.tons);
     case 'townFavor':
       return askFavor(world, player, msg.contactId, rng);
     case 'townEvent':

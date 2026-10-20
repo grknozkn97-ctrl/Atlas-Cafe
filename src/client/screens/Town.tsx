@@ -1,39 +1,28 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { formatGameDate } from '../../shared/constants';
 import { localPoll } from '../../shared/local';
+import { COVER_LABELS, SERVICES, ZONES, analyze, idx, type Analysis } from '../../shared/city';
 import {
-  BUILDINGS,
-  BUILDING_IDS,
   FAVOR_COOLDOWN,
-  MATERIAL_BUY,
-  MATERIAL_SELL,
   NETWORK,
   NETWORK_IDS,
   RANKS,
   RANK_ORDER,
-  TAX_LABELS,
   TOWN_ACTIONS,
   campaignChance,
-  canBuild,
-  capacity,
   contactThreshold,
-  economy,
   favorEffect,
   fmt,
-  happinessTarget,
-  levelOf,
   nextRank,
   requirements,
-  slotCount,
-  unemployment,
-  upgradeCost,
+  serviceNetwork,
   MAX_CONTACTS_PER_GROUP,
 } from '../../shared/town';
-import type { BuildingId, ClientMessage, CountryState, NetworkId, Party, PlayerView, Town } from '../../shared/types';
+import type { City, ClientMessage, CountryState, CoverKind, NetworkId, Party, PlayerView, ServiceId, Town } from '../../shared/types';
 import { Avatar } from '../ui/Avatar';
+import { CityEditor, type CityEditorHandle, type Overlay, type Tool } from '../ui/CityEditor';
 import { isNight } from '../ui/City3D';
 import { ProvinceMap } from '../ui/ProvinceMap';
-import { BuildingSprite, TownView, iso } from '../ui/TownView';
 import { Meter, PartyBadge } from '../ui/Widgets';
 import { GovWatch, News, OppositionView, PollsCard } from './Politics';
 import { ProvincesPanel } from './Provinces';
@@ -45,15 +34,17 @@ const money = (n: number) => (Math.abs(n) >= 1000 ? `${(n / 1000).toFixed(1).rep
 // ---------------------------------------------------------------- kaynak çubuğu
 
 function ResourceBar({ t, me }: { t: Town; me: PlayerView }) {
-  const e = economy(t);
-  const cap = capacity(t);
+  const st = t.city.stats;
+  const powerOk = st.powerProd >= st.powerUse;
+  const waterOk = st.waterProd >= st.waterUse;
   const items = [
-    { icon: '💰', label: 'Kasa', value: money(t.money), sub: `${e.net >= 0 ? '+' : '−'}${Math.abs(Math.round(e.net))}/gün`, tone: t.money < 0 || e.net < 0 ? 'bad' : '' },
-    { icon: '🧱', label: 'Malzeme', value: `${fmt(Math.floor(t.materials))} t`, sub: `+${Math.round(e.materials)}/gün`, tone: '' },
-    { icon: '👥', label: 'Nüfus', value: fmt(t.pop), sub: `konut ${fmt(cap)}`, tone: t.pop / cap > 0.97 ? 'mid' : '' },
-    { icon: t.happiness >= 60 ? '😊' : t.happiness >= 45 ? '😐' : '😠', label: 'Memnuniyet', value: `%${Math.round(t.happiness)}`, sub: `hedef %${Math.round(happinessTarget(t).value)}`, tone: t.happiness < 45 ? 'bad' : '' },
-    { icon: '⭐', label: 'Nüfuz', value: `${Math.floor(t.influence)}`, sub: `+${e.influence.toFixed(1)}/gün`, tone: '' },
-    { icon: '📣', label: 'Tanınırlık', value: `${Math.round(me.fame)}`, sub: me.membership && !me.partyId ? `parti güveni ${Math.round(me.membership.trust)}` : '', tone: '' },
+    { icon: '💰', label: 'Kasa', value: money(t.money), sub: `${st.net >= 0 ? '+' : '−'}${fmt(Math.abs(Math.round(st.net)))}/gün`, tone: t.money < 0 || st.net < 0 ? 'bad' : '' },
+    { icon: '👥', label: 'Nüfus', value: fmt(t.pop), sub: `${fmt(Math.round(st.jobs))} iş`, tone: '' },
+    { icon: t.happiness >= 60 ? '😊' : t.happiness >= 45 ? '😐' : '😠', label: 'Memnuniyet', value: `%${Math.round(t.happiness)}`, sub: 'memnuniyet', tone: t.happiness < 45 ? 'bad' : '' },
+    { icon: '⚡', label: 'Elektrik', value: `${Math.round(st.powerUse)}/${Math.round(st.powerProd)} MW`, sub: powerOk ? 'yeterli' : 'yetersiz!', tone: powerOk ? '' : 'bad' },
+    { icon: '💧', label: 'Su', value: `${Math.round(st.waterUse)}/${Math.round(st.waterProd)} m³`, sub: waterOk ? 'yeterli' : 'yetersiz!', tone: waterOk ? '' : 'bad' },
+    { icon: '⭐', label: 'Nüfuz', value: `${Math.floor(t.influence)}`, sub: 'nüfuz', tone: '' },
+    { icon: '📣', label: 'Tanınırlık', value: `${Math.round(me.fame)}`, sub: me.membership && !me.partyId ? `parti güveni ${Math.round(me.membership.trust)}` : 'tanınırlık', tone: '' },
   ];
   return (
     <div className="resbar">
@@ -62,7 +53,7 @@ function ResourceBar({ t, me }: { t: Town; me: PlayerView }) {
           <span className="res-icon">{x.icon}</span>
           <span className="res-text">
             <b>{x.value}</b>
-            <span className="small muted">{x.sub || x.label}</span>
+            <span className="small muted">{x.sub}</span>
           </span>
         </div>
       ))}
@@ -70,125 +61,135 @@ function ResourceBar({ t, me }: { t: Town; me: PlayerView }) {
   );
 }
 
-// ---------------------------------------------------------------- bina paneli
+// ---------------------------------------------------------------- araç çubuğu
 
-function MiniSprite({ b, level, color, short }: { b: BuildingId; level: number; color: string; short: string }) {
-  const [x, y] = iso(1, 1);
-  return (
-    <svg className="mini-sprite" viewBox={`${x - 70} ${y - 120} 140 150`} aria-hidden>
-      <BuildingSprite b={b} level={Math.max(1, level)} cx={1} cy={1} night={false} partyColor={color} partyShort={short} />
-    </svg>
-  );
-}
+const ZONE_ICONS = ['⬜', '🏠', '🏬', '🏭', '🏢'];
+const ZONE_HELP = ['Bölge işaretini kaldırır.', 'Evler ve apartmanlar: nüfus ve konut vergisi.', 'Dükkân ve marketler: halkın alışverişi, iş.', 'Fabrikalar: çok iş, ama kirlilik.', 'Ofis kuleleri: temiz ve kârlı, eğitim ister.'];
+const ZONE_SOURCES: Partial<Record<NetworkId, string[]>> = { esnaf: ['ticaret bölgeleri'], isDunyasi: ['sanayi ve ofis bölgeleri'], sendika: ['sanayi bölgeleri'] };
 
-function CostLine({ t, b, toLevel }: { t: Town; b: BuildingId; toLevel: number }) {
-  const cost = upgradeCost(b, toLevel);
+const GROUPS: { id: string; icon: string; label: string; items: ServiceId[] }[] = [
+  { id: 'saglik', icon: '🏥', label: 'Sağlık', items: ['saglikOcagi', 'hastane'] },
+  { id: 'guvenlik', icon: '🚓', label: 'Güvenlik', items: ['polis', 'itfaiye'] },
+  { id: 'egitim', icon: '🎓', label: 'Eğitim', items: ['okul', 'universite'] },
+  { id: 'park', icon: '🌳', label: 'Park', items: ['park', 'buyukPark'] },
+  { id: 'elektrik', icon: '⚡', label: 'Elektrik', items: ['komur', 'gunes', 'ruzgar'] },
+  { id: 'su', icon: '💧', label: 'Su', items: ['suPompasi'] },
+  { id: 'siyaset', icon: '🚩', label: 'Siyaset', items: ['meydan', 'basin', 'parti'] },
+];
+
+const OVERLAYS: { id: Overlay; icon: string; label: string }[] = [
+  { id: null, icon: '🏙️', label: 'Normal' },
+  { id: 'power', icon: '⚡', label: 'Elektrik' },
+  { id: 'water', icon: '💧', label: 'Su' },
+  { id: 'saglik', icon: '🏥', label: 'Sağlık' },
+  { id: 'polis', icon: '🚓', label: 'Güvenlik' },
+  { id: 'itfaiye', icon: '🚒', label: 'İtfaiye' },
+  { id: 'egitim', icon: '🎓', label: 'Eğitim' },
+  { id: 'park', icon: '🌳', label: 'Yeşil alan' },
+  { id: 'pollution', icon: '🏭', label: 'Kirlilik' },
+  { id: 'value', icon: '💎', label: 'Arazi değeri' },
+  { id: 'happy', icon: '😊', label: 'Mutluluk' },
+];
+
+function Demand({ d }: { d: City['stats']['demand'] }) {
   return (
-    <div className="cost">
-      <span className={t.money >= cost.money ? '' : 'bad'}>💰 {money(cost.money)}</span>
-      <span className={t.materials >= cost.materials ? '' : 'bad'}>🧱 {fmt(cost.materials)} t</span>
-      <span>⏱️ {cost.days} gün</span>
+    <div className="rci" title="Talep: çubuk yukarıdaysa o bölgeden daha fazla aç.">
+      {d.map((v, k) => (
+        <div key={k} className="rci-col">
+          <div className="rci-bar">
+            <div className="rci-fill" style={{ height: `${Math.abs(v) * 50}%`, bottom: v >= 0 ? '50%' : undefined, top: v < 0 ? '50%' : undefined, background: ZONES[k + 1].color, opacity: v >= 0 ? 1 : 0.4 }} />
+          </div>
+          <span>{ZONES[k + 1].short}</span>
+        </div>
+      ))}
     </div>
   );
 }
 
-function BuildMenu({ t, slot, send, party }: { t: Town; slot: number; send: Send; party: Party | null }) {
+function ToolBar({ tool, setTool, t }: { tool: Tool; setTool: (t: Tool) => void; t: Town }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const pick = (x: Tool) => {
+    setTool(x);
+    setOpen(null);
+  };
+  const same = (a: Tool, b: Tool) => JSON.stringify(a) === JSON.stringify(b);
+  const group = GROUPS.find((g) => g.id === open);
   return (
-    <div className="build-menu">
-      <p className="small muted">Bu arsaya ne kurmak istersin? Aynı anda tek inşaat yürür.</p>
-      {BUILDING_IDS.filter((b) => b !== 'belediye').map((b) => {
-        const err = canBuild(t, slot, b);
-        const spec = BUILDINGS[b];
-        return (
-          <button key={b} className="build-opt" disabled={!!err || !!t.construction} onClick={() => send({ type: 'townBuild', slot, building: b })}>
-            <MiniSprite b={b} level={1} color={party?.color ?? '#c0392b'} short={party?.short ?? ''} />
-            <span className="build-opt-body">
-              <b>
-                {spec.icon} {spec.label}
-              </b>
-              <span className="small muted">{spec.desc}</span>
-              <span className="small">{spec.effect(1)}</span>
-              {err ? <span className="small bad">{err}</span> : <CostLine t={t} b={b} toLevel={1} />}
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function TradeBox({ t, send }: { t: Town; send: Send }) {
-  const [n, setN] = useState(100);
-  return (
-    <div className="trade">
-      <h4>🧱 Malzeme ticareti</h4>
-      <p className="small muted">
-        Alış {MATERIAL_BUY} bin ₺/ton, satış {MATERIAL_SELL} bin ₺/ton.
-      </p>
-      <div className="trade-row">
-        <input type="range" min={10} max={1000} step={10} value={n} onChange={(e) => setN(Number(e.target.value))} aria-label="Ton" />
-        <b>{n} t</b>
-      </div>
-      <div className="actions">
-        <button className="small" disabled={t.money < n * MATERIAL_BUY} onClick={() => send({ type: 'townTrade', tons: n })}>
-          Al ({fmt(n * MATERIAL_BUY)} bin ₺)
+    <div className="city-tools">
+      {open === 'bolge' && (
+        <div className="tool-menu">
+          {[1, 2, 3, 4, 0].map((z) => (
+            <button key={z} className={`tool-card ${tool.kind === 'zone' && tool.zone === z ? 'on' : ''}`} onClick={() => pick({ kind: 'zone', zone: z })} style={{ ['--zc' as string]: z ? ZONES[z].color : '#999' }}>
+              <span className="tc-icon">{ZONE_ICONS[z]}</span>
+              <b>{z ? ZONES[z].label : 'İmarı kaldır'}</b>
+              <span className="small muted">{ZONE_HELP[z]}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {group && (
+        <div className="tool-menu">
+          {group.items.map((id) => {
+            const sp = SERVICES[id];
+            const poor = t.money < sp.cost;
+            return (
+              <button key={id} className={`tool-card ${tool.kind === 'place' && tool.service === id ? 'on' : ''}`} disabled={poor} onClick={() => pick({ kind: 'place', service: id })}>
+                <span className="tc-icon">{sp.icon}</span>
+                <b>{sp.label}</b>
+                <span className="small muted">{sp.desc}</span>
+                <span className="small">
+                  💰 {fmt(sp.cost)} bin ₺ · bakım {sp.upkeep}/gün
+                  {sp.power ? ` · ⚡ ${sp.power} MW` : ''}
+                  {sp.water ? ` · 💧 ${sp.water} m³` : ''}
+                  {sp.size > 1 ? ` · ${sp.size}×${sp.size}` : ''}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <div className="tool-row">
+        <button className={tool.kind === 'inspect' ? 'on' : ''} onClick={() => pick({ kind: 'inspect' })} title="Seç ve incele (Esc)">
+          <span>🔍</span>
+          <small>İncele</small>
         </button>
-        <button className="ghost small" disabled={t.materials < n} onClick={() => send({ type: 'townTrade', tons: -n })}>
-          Sat (+{fmt(n * MATERIAL_SELL)} bin ₺)
+        <button className={tool.kind === 'road' ? 'on' : ''} onClick={() => pick({ kind: 'road' })} title="Sürükleyerek yol çiz">
+          <span>🛣️</span>
+          <small>Yol</small>
         </button>
-      </div>
-    </div>
-  );
-}
-
-function TaxBox({ t, send }: { t: Town; send: Send }) {
-  const e = economy(t);
-  const h = happinessTarget(t);
-  return (
-    <div className="taxbox">
-      <h4>🧾 Emlak ve çevre vergisi</h4>
-      <div className="seg">
-        {(['dusuk', 'orta', 'yuksek'] as const).map((x) => (
-          <button key={x} className={t.tax === x ? 'on' : ''} onClick={() => send({ type: 'townTax', tax: x })}>
-            {TAX_LABELS[x]}
+        <button className={tool.kind === 'zone' || open === 'bolge' ? 'on' : ''} onClick={() => setOpen(open === 'bolge' ? null : 'bolge')}>
+          <span>🗺️</span>
+          <small>Bölge</small>
+        </button>
+        {GROUPS.map((g) => (
+          <button key={g.id} className={open === g.id || (tool.kind === 'place' && g.items.includes(tool.service)) ? 'on' : ''} onClick={() => setOpen(open === g.id ? null : g.id)}>
+            <span>{g.icon}</span>
+            <small>{g.label}</small>
           </button>
         ))}
+        <button className={`danger-tool ${tool.kind === 'bulldoze' ? 'on' : ''}`} onClick={() => pick({ kind: 'bulldoze' })} title="Sürükleyerek yık">
+          <span>🧨</span>
+          <small>Yık</small>
+        </button>
       </div>
-      <table className="ledger small">
-        <tbody>
-          <tr>
-            <td>Vergi geliri</td>
-            <td>+{Math.round(e.taxIncome)}</td>
-          </tr>
-          <tr>
-            <td>Çarşı</td>
-            <td>+{Math.round(e.trade)}</td>
-          </tr>
-          <tr>
-            <td>Sanayi</td>
-            <td>+{Math.round(e.industry)}</td>
-          </tr>
-          <tr>
-            <td>Bina bakımı</td>
-            <td className="bad">−{Math.round(e.upkeep)}</td>
-          </tr>
-          <tr className="sum">
-            <td>Günlük net (bin ₺)</td>
-            <td>{Math.round(e.net)}</td>
-          </tr>
-        </tbody>
-      </table>
-      <h4>😊 Memnuniyet neden %{Math.round(h.value)}?</h4>
-      <div className="mood-parts">
-        {h.parts.map((p) => (
-          <span key={p.label} className={`chip ${p.value >= 0 ? 'good' : 'bad'}`}>
-            {p.label} {p.value >= 0 ? '+' : '−'}
-            {Math.abs(p.value).toFixed(0)}
-          </span>
-        ))}
-      </div>
-      <p className="small muted">İşsizlik %{Math.round(unemployment(t) * 100)}. İş için çarşı ve sanayiyi büyüt.</p>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------- inceleme paneli
+
+const LEVEL_NAMES: Record<number, string[]> = {
+  1: ['', 'Müstakil ev', 'Bahçeli ikiz ev', 'Apartman', 'Rezidans kulesi'],
+  2: ['', 'Mahalle bakkalı', 'Dükkânlar', 'Alışveriş merkezi', 'Ticaret kulesi'],
+  3: ['', 'Atölye', 'Fabrika', 'Büyük tesis', 'Organize sanayi'],
+  4: ['', 'Küçük ofis', 'İş merkezi', 'Plaza', 'Gökdelen'],
+};
+
+function Check({ ok, label, value }: { ok: boolean; label: string; value?: string }) {
+  return (
+    <li className={ok ? 'ok' : 'bad'}>
+      <span>{ok ? '✅' : '⚠️'}</span> {label} {value && <span className="muted small">{value}</span>}
+    </li>
   );
 }
 
@@ -213,96 +214,67 @@ function ContactRow({ k, t, day, send }: { k: Town['contacts'][number]; t: Town;
   );
 }
 
-function BuildingPanel({ t, slot, day, send, party, onClose }: { t: Town; slot: number; day: number; send: Send; party: Party | null; onClose: () => void }) {
-  const s = t.slots[slot];
-  const k = t.construction;
-  const color = party?.color ?? '#c0392b';
-  const short = party?.short ?? '';
-  if (!s.building && k?.slot !== slot) {
-    return (
-      <aside className="bpanel card">
-        <header className="bpanel-head">
-          <h3>🏗️ Boş arsa</h3>
-          <button className="ghost small" onClick={onClose} aria-label="Kapat">
-            ✕
-          </button>
-        </header>
-        <BuildMenu t={t} slot={slot} send={send} party={party} />
-      </aside>
-    );
-  }
-  const b = (s.building ?? k!.building) as BuildingId;
-  const spec = BUILDINGS[b];
-  const bel = levelOf(t, 'belediye');
-  const busy = k?.slot === slot;
-  const maxed = s.level >= spec.max;
-  const blocked = b !== 'belediye' && s.level + 1 > bel + 1;
-  const actions = TOWN_ACTIONS[b] ?? [];
-  const contacts = spec.network ? t.contacts.filter((c) => c.group === spec.network) : [];
+function ServiceInfo({ t, a, i, day, send }: { t: Town; a: Analysis; i: number; day: number; send: Send }) {
+  const c = t.city;
+  const s = c.services[c.occ[i] - 1];
+  const sp = SERVICES[s.type];
+  const actions = TOWN_ACTIONS[s.type] ?? [];
+  const g = serviceNetwork(s.type);
+  const contacts = g ? t.contacts.filter((k) => k.group === g) : [];
+  let road = false;
+  for (let y = s.y - 1; y <= s.y + sp.size; y++)
+    for (let x = s.x - 1; x <= s.x + sp.size; x++) if (x >= 0 && y >= 0 && x < c.n && y < c.n && a.connected[idx(c, x, y)]) road = true;
   return (
-    <aside className="bpanel card">
-      <header className="bpanel-head">
-        <MiniSprite b={b} level={s.level || 1} color={color} short={short} />
-        <div>
-          <h3>
-            {spec.icon} {spec.label}
-          </h3>
-          <div className="small muted">{s.level ? `${s.level}. seviye` : 'yapım aşamasında'}</div>
-        </div>
-        <button className="ghost small" onClick={onClose} aria-label="Kapat">
-          ✕
-        </button>
-      </header>
-      <p className="small">{spec.desc}</p>
-      <div className="fx-now small">
-        {s.level > 0 && (
-          <div>
-            <span className="muted">Şimdi:</span> {spec.effect(s.level)}
-          </div>
+    <>
+      <h3>
+        {sp.icon} {sp.label}
+      </h3>
+      <p className="small">{sp.desc}</p>
+      <ul className="checks small">
+        <Check ok={road} label={road ? 'Yol ağına bağlı' : 'Otoyola bağlı yol yok: çalışmıyor'} />
+        <li>
+          <span>💸</span> Bakım {Math.round(sp.upkeep * (sp.cover ? c.budget.svc[sp.cover] : 1))} bin ₺/gün
+        </li>
+        {sp.cover && sp.radius && (
+          <li>
+            <span>📡</span> {COVER_LABELS[sp.cover]} kapsamı: {Math.round(sp.radius * Math.sqrt(c.budget.svc[sp.cover]))} karo yarıçap
+          </li>
         )}
-        {!maxed && (
-          <div>
-            <span className="muted">{s.level + 1}. seviye:</span> <b>{spec.effect(s.level + 1)}</b>
-          </div>
+        {sp.power && (
+          <li>
+            <span>⚡</span> {sp.power} MW elektrik
+          </li>
         )}
-      </div>
-      {busy ? (
-        <div className="busy">
-          <div className="slider-head small">
-            <span>🏗️ {k!.toLevel}. seviyeye çıkıyor</span>
-            <b>{Math.max(0, k!.endDay - day)} gün</b>
-          </div>
-          <Meter value={((day - k!.startDay) / Math.max(1, k!.endDay - k!.startDay)) * 100} color="#f2b705" />
-          <button className="ghost small" onClick={() => send({ type: 'townCancel' })}>
-            İnşaatı iptal et (%70 iade)
-          </button>
-        </div>
-      ) : maxed ? (
-        <p className="small good">En üst seviyede.</p>
-      ) : (
-        <div className="upgrade">
-          <CostLine t={t} b={b} toLevel={s.level + 1} />
-          <button className="primary" disabled={!!k || blocked} onClick={() => send({ type: 'townUpgrade', slot })}>
-            ⬆️ {s.level + 1}. seviyeye yükselt
-          </button>
-          {blocked && <p className="small bad">Önce belediye binasını {s.level}. seviyeye çıkar.</p>}
-          {k && <p className="small muted">Şu an başka bir inşaat sürüyor: {BUILDINGS[k.building].label}.</p>}
-        </div>
-      )}
-      {actions.length > 0 && s.level > 0 && (
+        {sp.water && (
+          <li>
+            <span>💧</span> {sp.water} m³ su
+          </li>
+        )}
+        {sp.pollution && (
+          <li className="bad">
+            <span>🏭</span> Çevresini kirletir
+          </li>
+        )}
+        {sp.influence && (
+          <li>
+            <span>⭐</span> Günde +{sp.influence} nüfuz
+          </li>
+        )}
+      </ul>
+      {actions.length > 0 && (
         <div className="bactions">
-          <h4>Bu binada yapabileceklerin</h4>
-          {actions.map((a) => {
-            const key = `${b}:${a.id}`;
+          <h4>Burada yapabileceklerin</h4>
+          {actions.map((x) => {
+            const key = `${s.type}:${x.id}`;
             const wait = Math.max(0, (t.cooldowns[key] ?? 0) - day);
-            const cant = (a.money ?? 0) > t.money || (a.influence ?? 0) > t.influence;
+            const cant = (x.money ?? 0) > t.money || (x.influence ?? 0) > t.influence;
             return (
-              <button key={a.id} className="baction" disabled={wait > 0 || cant} onClick={() => send({ type: 'townAction', building: b, action: a.id })}>
-                <b>{a.label}</b>
-                <span className="small muted">{a.desc}</span>
+              <button key={x.id} className="baction" disabled={wait > 0 || cant} onClick={() => send({ type: 'townAction', building: s.type, action: x.id })}>
+                <b>{x.label}</b>
+                <span className="small muted">{x.desc}</span>
                 <span className="small">
-                  {a.money ? `💰 ${a.money} bin ₺ ` : ''}
-                  {a.influence ? `⭐ ${a.influence} nüfuz ` : ''}
+                  {x.money ? `💰 ${x.money} bin ₺ ` : ''}
+                  {x.influence ? `⭐ ${x.influence} nüfuz ` : ''}
                   {wait > 0 ? `· ⏳ ${wait} gün` : ''}
                 </span>
               </button>
@@ -310,49 +282,282 @@ function BuildingPanel({ t, slot, day, send, party, onClose }: { t: Town; slot: 
           })}
         </div>
       )}
-      {b === 'belediye' && <TaxBox t={t} send={send} />}
-      {b === 'belediye' && <p className="small muted">Açık arsa: {slotCount(bel)} / 14. Belediye binası büyüdükçe yeni arsalar açılır.</p>}
-      {b === 'carsi' && s.level > 0 && <TradeBox t={t} send={send} />}
-      {spec.network && (
+      {g && (
         <div className="bnet">
           <h4>
-            {NETWORK[spec.network].icon} {NETWORK[spec.network].label} çevren
+            {NETWORK[g].icon} {NETWORK[g].label} çevren
           </h4>
-          {contacts.length ? (
-            contacts.map((c) => <ContactRow key={c.id} k={c} t={t} day={day} send={send} />)
-          ) : (
-            <p className="small muted">Bu bina zamanla sana bu kesimden tanıdıklar kazandıracak.</p>
-          )}
+          {contacts.length ? contacts.map((k) => <ContactRow key={k.id} k={k} t={t} day={day} send={send} />) : <p className="small muted">Bu bina zamanla sana bu kesimden tanıdıklar kazandırır.</p>}
         </div>
       )}
-    </aside>
+      {!sp.fixed && (
+        <button className="ghost small danger-text" onClick={() => send({ type: 'cityPaint', tool: 'bulldoze', cells: [i] })}>
+          🧨 Yık ({fmt(sp.cost / 2)} bin ₺ geri döner)
+        </button>
+      )}
+    </>
   );
 }
 
-function Guide({ t }: { t: Town }) {
-  const next = nextRank(t.rank);
-  const k = t.construction;
+function CellInfo({ t, a, i, day, send }: { t: Town; a: Analysis; i: number; day: number; send: Send }) {
+  const c = t.city;
+  if (c.occ[i]) return <ServiceInfo t={t} a={a} i={i} day={day} send={send} />;
+  if (c.road[i])
+    return (
+      <>
+        <h3>🛣️ {c.terrain[i] ? 'Köprü' : 'Yol'}</h3>
+        <ul className="checks small">
+          <Check ok={!!a.connected[i]} label={a.connected[i] ? 'Otoyola bağlı' : 'Otoyola bağlı değil: araçlar ulaşamaz, bölgeler gelişmez'} />
+        </ul>
+        <button className="ghost small danger-text" onClick={() => send({ type: 'cityPaint', tool: 'bulldoze', cells: [i] })}>
+          🧨 Yolu kaldır
+        </button>
+      </>
+    );
+  if (c.terrain[i]) return <h3>🌊 Su</h3>;
+  const z = c.zone[i];
+  if (!z)
+    return (
+      <>
+        <h3>🌾 Boş arazi</h3>
+        <p className="small muted">Bölge aracıyla burayı imara açabilir ya da hizmet binası kurabilirsin. Bölgeler yola en fazla 3 karo uzaklıkta olmalı.</p>
+      </>
+    );
+  const L = c.lvl[i];
+  const pct = (v: number) => `%${Math.round(v * 100)}`;
   return (
-    <aside className="bpanel card guide">
-      <h3>🏡 {t.name}</h3>
-      <p className="small">Şehrindeki bir binaya ya da boş arsaya dokun. Binalar geliştikçe şehir büyür, gelirin artar ve yeni insanlarla tanışırsın.</p>
-      {k ? (
-        <p className="small">
-          🏗️ Süren inşaat: <b>{BUILDINGS[k.building].label}</b> ({k.toLevel}. seviye), {formatGameDate(k.endDay)}.
-        </p>
-      ) : (
-        <p className="small good">İnşaat ekibin boşta. Bir bina kur ya da geliştir.</p>
+    <>
+      <h3>
+        {ZONE_ICONS[z]} {L ? LEVEL_NAMES[z][L] : `${ZONES[z].label} bölgesi (boş)`}
+      </h3>
+      <p className="small muted">
+        {ZONES[z].label} · {L ? `${L}. seviye` : 'talep varsa burada bina yükselecek'}
+      </p>
+      <ul className="checks small">
+        <Check ok={!!a.access[i]} label="Yol erişimi" />
+        <Check ok={!!a.power[i]} label="Elektrik" />
+        <Check ok={!!a.water[i]} label="Su" />
+        <Check ok={a.cover.saglik[i] > 0.2} label="Sağlık" value={pct(a.cover.saglik[i])} />
+        <Check ok={a.cover.polis[i] > 0.2} label="Güvenlik" value={pct(a.cover.polis[i])} />
+        <Check ok={a.cover.itfaiye[i] > 0.2} label="İtfaiye" value={pct(a.cover.itfaiye[i])} />
+        <Check ok={a.cover.egitim[i] > 0.2} label="Eğitim" value={pct(a.cover.egitim[i])} />
+        <Check ok={a.pollution[i] < 0.25} label="Kirlilik" value={pct(a.pollution[i])} />
+      </ul>
+      <div className="small">
+        Arazi değeri <Meter value={a.value[i]} color="#8e7cc3" />
+      </div>
+      {L > 0 && z === 1 && (
+        <div className="small">
+          Mutluluk <Meter value={a.happy[i]} color="#4caf50" />
+        </div>
       )}
-      {next && <p className="small muted">Sıradaki hedefin: {RANKS[next].icon} {RANKS[next].label}. Kariyer sekmesinde neler gerektiğini gör.</p>}
+      <p className="small muted">Bina, arazi değeri arttıkça büyür. Değeri sağlık, güvenlik, eğitim ve parklar artırır; kirlilik düşürür.</p>
+      <button className="ghost small danger-text" onClick={() => send({ type: 'cityPaint', tool: 'bulldoze', cells: [i] })}>
+        🧨 Yık ve imarı kaldır
+      </button>
+    </>
+  );
+}
+
+function Overview({ t }: { t: Town }) {
+  const c = t.city;
+  const st = c.stats;
+  const has = (k: ServiceId[]) => c.services.some((s) => k.includes(s.type));
+  const zoned = (z: number) => c.zone.some((x) => x === z);
+  const roads = c.road.reduce((s, x) => s + x, 0);
+  const steps = [
+    { ok: roads > 24, text: 'Otoyoldan şehre yol çiz' },
+    { ok: zoned(1), text: 'Yolun yanına konut bölgesi aç' },
+    { ok: has(['komur', 'gunes', 'ruzgar']), text: 'Santral kur (elektrik)' },
+    { ok: has(['suPompasi']), text: 'Nehir kıyısına su pompası kur' },
+    { ok: zoned(2) && zoned(3), text: 'Ticaret ve sanayi bölgesi aç (iş)' },
+    { ok: has(['saglikOcagi', 'hastane']) && has(['polis']) && has(['itfaiye']), text: 'Sağlık, karakol, itfaiye kur' },
+    { ok: has(['okul', 'universite']), text: 'Okul kur, ofis bölgelerini aç' },
+  ];
+  const next = nextRank(t.rank);
+  return (
+    <>
+      <h3>🏙️ {t.name}</h3>
+      <div className="ov-grid small">
+        <span>Nüfus</span>
+        <b>{fmt(st.pop)}</b>
+        <span>İş yeri</span>
+        <b>{fmt(Math.round(st.jobs))}</b>
+        <span>Bina</span>
+        <b>{st.buildings}</b>
+        <span>Günlük gelir</span>
+        <b className={st.net >= 0 ? 'good' : 'bad'}>
+          {st.net >= 0 ? '+' : '−'}
+          {fmt(Math.abs(Math.round(st.net)))} bin ₺
+        </b>
+      </div>
+      <div className="small">
+        ⚡ Elektrik {Math.round(st.powerUse)}/{Math.round(st.powerProd)} MW
+        <Meter value={st.powerProd ? (st.powerUse / st.powerProd) * 100 : 100} color={st.powerUse > st.powerProd ? '#e53935' : '#f2b705'} />
+        💧 Su {Math.round(st.waterUse)}/{Math.round(st.waterProd)} m³
+        <Meter value={st.waterProd ? (st.waterUse / st.waterProd) * 100 : 100} color={st.waterUse > st.waterProd ? '#e53935' : '#2f80ed'} />
+      </div>
+      <h4>Yapılacaklar</h4>
+      <ul className="checks small">
+        {steps.map((s) => (
+          <li key={s.text} className={s.ok ? 'ok' : ''}>
+            <span>{s.ok ? '✅' : '⬜'}</span> {s.text}
+          </li>
+        ))}
+      </ul>
+      {next && <p className="small muted">Sıradaki hedefin: {RANKS[next].icon} {RANKS[next].label}. Kariyer sekmesinde şartları gör.</p>}
       <h4>Son olaylar</h4>
       <ul className="tlog">
-        {t.log.slice(0, 6).map((l, i) => (
+        {t.log.slice(0, 5).map((l, i) => (
           <li key={i} className={`small ${l.kind}`}>
             <span className="muted">{formatGameDate(l.day, false)}</span> {l.text}
           </li>
         ))}
       </ul>
-    </aside>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------- bütçe
+
+function Slider({ label, value, min, max, step, fmtV, onChange, hint }: { label: string; value: number; min: number; max: number; step: number; fmtV: (v: number) => string; onChange: (v: number) => void; hint?: string }) {
+  return (
+    <label className="bslider">
+      <div className="slider-head small">
+        <span>{label}</span>
+        <b>{fmtV(value)}</b>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} />
+      {hint && <span className="small muted">{hint}</span>}
+    </label>
+  );
+}
+
+function BudgetPanel({ t, send }: { t: Town; send: Send }) {
+  const b = t.city.budget;
+  const st = t.city.stats;
+  const tax = (k: number, v: number) => {
+    const next = [...b.tax] as City['budget']['tax'];
+    next[k] = v;
+    send({ type: 'cityBudget', tax: next });
+  };
+  const income = st.income.reduce((s, x) => s + x.value, 0);
+  const expense = st.expense.reduce((s, x) => s + x.value, 0);
+  return (
+    <>
+      <h3>💼 Bütçe ve vergiler</h3>
+      <div className="ov-grid small">
+        <span>Gelir</span>
+        <b className="good">+{fmt(Math.round(income))}/gün</b>
+        <span>Gider</span>
+        <b className="bad">−{fmt(Math.round(expense))}/gün</b>
+        <span>Net</span>
+        <b className={st.net >= 0 ? 'good' : 'bad'}>
+          {st.net >= 0 ? '+' : '−'}
+          {fmt(Math.abs(Math.round(st.net)))}/gün
+        </b>
+      </div>
+      <h4>Vergi oranları</h4>
+      {[0, 1, 2, 3].map((k) => (
+        <Slider key={k} label={`${ZONE_ICONS[k + 1]} ${ZONES[k + 1].label}`} value={b.tax[k]} min={1} max={29} step={1} fmtV={(v) => `%${v}`} onChange={(v) => tax(k, v)} hint={k === 0 ? '%10 üstü her puan talebi ve mutluluğu düşürür.' : undefined} />
+      ))}
+      <h4>Su ve elektrik fiyatı</h4>
+      <Slider label="⚡ Elektrik fiyatı" value={b.power} min={0.5} max={2} step={0.05} fmtV={(v) => `${Math.round(v * 100)}%`} onChange={(v) => send({ type: 'cityBudget', power: v })} hint="Pahalı elektrik geliri artırır, halkı kızdırır ve tüketimi azaltır." />
+      <Slider label="💧 Su fiyatı" value={b.water} min={0.5} max={2} step={0.05} fmtV={(v) => `${Math.round(v * 100)}%`} onChange={(v) => send({ type: 'cityBudget', water: v })} />
+      <h4>Hizmet bütçeleri</h4>
+      {(Object.keys(COVER_LABELS) as CoverKind[]).map((k) => (
+        <Slider key={k} label={COVER_LABELS[k]} value={b.svc[k]} min={0.5} max={1.5} step={0.05} fmtV={(v) => `%${Math.round(v * 100)}`} onChange={(v) => send({ type: 'cityBudget', svc: { [k]: v } })} />
+      ))}
+      <p className="small muted">Bütçeyi artırmak kapsama alanını genişletir ama bakım masrafını artırır.</p>
+      <h4>Kalem kalem</h4>
+      <ul className="ledger small">
+        {st.income.filter((x) => x.value > 0.5).map((x) => (
+          <li key={x.label}>
+            <span>{x.label}</span>
+            <b className="good">+{fmt(Math.round(x.value))}</b>
+          </li>
+        ))}
+        {st.expense.filter((x) => x.value > 0.5).map((x) => (
+          <li key={x.label}>
+            <span>{x.label}</span>
+            <b className="bad">−{fmt(Math.round(x.value))}</b>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------- şehir sekmesi
+
+function CityTab({ t, me, day, send, party, night }: { t: Town; me: PlayerView; day: number; send: Send; party: Party | null; night: boolean }) {
+  const [tool, setTool] = useState<Tool>({ kind: 'inspect' });
+  const [overlay, setOverlay] = useState<Overlay>(null);
+  const [sel, setSel] = useState<number | null>(null);
+  const [side, setSide] = useState<'bilgi' | 'butce'>('bilgi');
+  const [hint, setHint] = useState<{ text: string; bad?: boolean } | null>(null);
+  const handle = useRef<CityEditorHandle | null>(null);
+  const a = useMemo(() => analyze(t.city), [t.city]);
+  void me;
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setTool({ kind: 'inspect' });
+    };
+    window.addEventListener('keydown', k);
+    return () => window.removeEventListener('keydown', k);
+  }, []);
+  const events = useMemo(
+    () => ({
+      paint: (tool: 'road' | 'zone' | 'bulldoze', cells: number[], zone?: number) => send({ type: 'cityPaint', tool, cells, zone }),
+      place: (service: ServiceId, x: number, y: number) => send({ type: 'cityPlace', service, x, y }),
+      inspect: (cell: number | null) => {
+        setSel(cell);
+        setSide('bilgi');
+      },
+      hint: (text: string | null, bad?: boolean) => setHint((h) => (h?.text === text && h?.bad === bad ? h : text ? { text, bad } : null)),
+    }),
+    [send],
+  );
+  return (
+    <div className="city-layout">
+      <div className="city-stage">
+        <CityEditor city={t.city} analysis={a} tool={tool} overlay={overlay} selected={sel} night={night} partyColor={party?.color ?? '#c0392b'} events={events} handle={handle} />
+        <div className="city-hud">
+          <Demand d={t.city.stats.demand} />
+          <div className="overlays">
+            {OVERLAYS.map((o) => (
+              <button key={o.label} className={overlay === o.id ? 'on' : ''} onClick={() => setOverlay(o.id)} title={o.label}>
+                {o.icon}
+                <small>{o.label}</small>
+              </button>
+            ))}
+          </div>
+        </div>
+        {hint && <div className={`city-hint ${hint.bad ? 'bad' : ''}`}>{hint.text}</div>}
+        {tool.kind !== 'inspect' && !hint && (
+          <div className="city-hint">
+            {tool.kind === 'road' ? 'Yol çizmek için sürükle' : tool.kind === 'zone' ? 'Bölge boyamak için sürükle' : tool.kind === 'bulldoze' ? 'Yıkmak için sürükle' : 'Kurmak için dokun'} · iki parmak ya da sağ tık ile kamerayı çevir
+          </div>
+        )}
+        <ToolBar tool={tool} setTool={setTool} t={t} />
+      </div>
+      <aside className="city-side card">
+        <nav className="side-tabs">
+          <button className={side === 'bilgi' ? 'active' : ''} onClick={() => setSide('bilgi')}>
+            {sel !== null ? '🔍 Seçili' : '🏙️ Şehir'}
+          </button>
+          <button className={side === 'butce' ? 'active' : ''} onClick={() => setSide('butce')}>
+            💼 Bütçe
+          </button>
+          {sel !== null && side === 'bilgi' && (
+            <button className="ghost small" onClick={() => setSel(null)} aria-label="Seçimi kaldır">
+              ✕
+            </button>
+          )}
+        </nav>
+        <div className="side-body">{side === 'butce' ? <BudgetPanel t={t} send={send} /> : sel !== null ? <CellInfo t={t} a={a} i={sel} day={day} send={send} /> : <Overview t={t} />}</div>
+      </aside>
+    </div>
   );
 }
 
@@ -421,7 +626,7 @@ function NetworkTab({ t, me, day, send }: { t: Town; me: PlayerView; day: number
           const n = list.length;
           const need = contactThreshold(n);
           const prev = n ? contactThreshold(n - 1) : 0;
-          const src = BUILDING_IDS.filter((b) => BUILDINGS[b].network === g).map((b) => BUILDINGS[b].label);
+          const src = (Object.keys(SERVICES) as ServiceId[]).filter((b) => serviceNetwork(b) === g).map((b) => SERVICES[b].label).concat(ZONE_SOURCES[g] ?? []);
           return (
             <section key={g} className="card net-card" style={{ ['--net' as string]: NETWORK[g].color }}>
               <h4>
@@ -627,7 +832,6 @@ type TabId = (typeof TOWN_TABS)[number]['id'];
 export function TownGame({ c, me, day, dayMs, send }: { c: CountryState; me: PlayerView; day: number; dayMs: number; send: Send }) {
   const t = me.town!;
   const [tab, setTab] = useState<TabId>('sehir');
-  const [sel, setSel] = useState<number | null>(null);
   const [night, setNight] = useState(isNight());
   useEffect(() => {
     const m = window.matchMedia?.('(prefers-color-scheme: dark)');
@@ -638,7 +842,6 @@ export function TownGame({ c, me, day, dayMs, send }: { c: CountryState; me: Pla
   const party = c.parties.find((p) => p.id === me.membership?.partyId) ?? null;
   const leader = c.parties.find((p) => p.id === me.partyId) ?? null;
   const tabs = TOWN_TABS.filter((x) => x.id !== 'il' || (me.office?.id === 'belediyeBaskani' && t.rank !== 'ilce'));
-  const pending = useMemo(() => t.slots.filter((s, i) => i < slotCount(t.slots[0].level) && !s.building).length, [t]);
   return (
     <div className="dashboard town-game">
       <section className="town-head card">
@@ -659,19 +862,11 @@ export function TownGame({ c, me, day, dayMs, send }: { c: CountryState; me: Pla
         {tabs.map((x) => (
           <button key={x.id} className={x.id === tab ? 'active' : ''} onClick={() => setTab(x.id)}>
             {x.label}
-            {x.id === 'sehir' && !t.construction && pending > 0 && <span className="badge">{pending}</span>}
           </button>
         ))}
       </nav>
       <main className="panel">
-        {tab === 'sehir' && (
-          <div className="town-layout">
-            <div className="town-stage">
-              <TownView t={t} day={day} night={night} partyColor={party?.color ?? '#c0392b'} partyShort={party?.short ?? ''} selected={sel} onSelect={setSel} />
-            </div>
-            {sel !== null ? <BuildingPanel t={t} slot={sel} day={day} send={send} party={party} onClose={() => setSel(null)} /> : <Guide t={t} />}
-          </div>
-        )}
+        {tab === 'sehir' && <CityTab t={t} me={me} day={day} send={send} party={party} night={night} />}
         {tab === 'cevre' && <NetworkTab t={t} me={me} day={day} send={send} />}
         {tab === 'kariyer' && <CareerTab c={c} t={t} me={me} day={day} send={send} />}
         {tab === 'harita' && <MapTab c={c} t={t} party={party} />}
