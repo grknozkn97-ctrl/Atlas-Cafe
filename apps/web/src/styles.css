@@ -50,7 +50,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .top { padding-top: 14px; padding-bottom: 6px; }
 .top-row { display: flex; align-items: center; gap: 12px; }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; min-width: 0; flex: 1; }
-.brand img { width: 40px; height: 66px; object-fit: contain; mix-blend-mode: multiply; }
+.brand img { width: 46px; height: 46px; object-fit: contain; }
 .brand-name { font-family: var(--display); font-size: 25px; line-height: 1; letter-spacing: -0.01em; }
 .brand-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
 
@@ -376,7 +376,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 /* ── Phone layout: get guests to the menu faster ───────────────────── */
 @media (max-width: 639px) {
-  .brand img { width: 32px; height: 52px; }
+  .brand img { width: 40px; height: 40px; }
   .brand-name { font-size: 22px; }
   .brand-sub { font-size: 12.5px; margin-top: 3px; }
   .tools { margin-top: 10px; }
@@ -487,7 +487,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   background: radial-gradient(circle at 38% 32%, #fff8e4 0%, #efe2c2 45%, #d5c296 100%);
   box-shadow: 0 0 0 3px rgba(239, 226, 194, 0.08), 0 0 28px rgba(255, 210, 140, 0.35);
 }
-[data-theme='halloween'] .logo-wrap img { width: 30px; height: 48px; mix-blend-mode: multiply; }
+[data-theme='halloween'] .logo-wrap img { width: 44px; height: 44px; }
 
 [data-theme='halloween'] .hw-banner {
   display: flex; gap: 12px; align-items: center; margin-top: 12px; padding: 12px 14px; border-radius: 14px;

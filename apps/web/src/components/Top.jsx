@@ -15,7 +15,7 @@ export default function Top({ query, setQuery, onLang, onFilter, hiddenAllergens
     <header className="top wrap">
       <div className="top-row">
         <a className="brand" href="/" aria-label="Atlas Cafe & Bar">
-          <span className="logo-wrap"><img src="/logo.png" alt="" width="40" height="66" /></span>
+          <span className="logo-wrap"><img src="/logo.png" alt="" width="46" height="46" /></span>
           <span>
             <span className="brand-name">Atlas Cafe &amp; Bar</span>
             <span className="brand-sub" style={{ display: 'block' }}>{t.tagline}</span>
