@@ -14,25 +14,49 @@ function rng(seed) {
   return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
 }
 
+// Two layers: many small soft flakes far away, and a few larger snow
+// crystals close by that turn slowly as they fall.
 const FLAKES = (() => {
   const r = rng(2027);
-  return Array.from({ length: 30 }, (_, i) => ({
+  return Array.from({ length: 44 }, (_, i) => ({
     left: (r() * 100).toFixed(2),
-    size: (2.5 + r() * 4).toFixed(1),
-    dur: (11 + r() * 14).toFixed(1),
-    delay: (-r() * 25).toFixed(1),
-    sway: (14 + r() * 30).toFixed(0),
-    opacity: (0.22 + r() * 0.36).toFixed(2),
-    blur: i % 5 === 0,
+    size: (2.5 + r() * 4.5).toFixed(1),
+    dur: (10 + r() * 12).toFixed(1),
+    delay: (-r() * 22).toFixed(1),
+    sway: (14 + r() * 34).toFixed(0),
+    opacity: (0.35 + r() * 0.45).toFixed(2),
+    blur: i % 4 === 0,
   }));
 })();
+
+const CRYSTALS = (() => {
+  const r = rng(1231);
+  return Array.from({ length: 12 }, () => ({
+    left: (3 + r() * 94).toFixed(2),
+    size: (11 + r() * 12).toFixed(0),
+    dur: (15 + r() * 12).toFixed(1),
+    delay: (-r() * 27).toFixed(1),
+    sway: (30 + r() * 50).toFixed(0),
+    spin: (7 + r() * 9).toFixed(1),
+    opacity: (0.45 + r() * 0.35).toFixed(2),
+  }));
+})();
+
+const CRYSTAL = (
+  <svg viewBox="0 0 24 24">
+    <g stroke="#ffffff" strokeWidth="1.6" strokeLinecap="round" fill="none">
+      <path d="M12 1.5v21M2.9 6.75l18.2 10.5M2.9 17.25l18.2-10.5" />
+      <path d="M12 1.5l-2.4 2.6M12 1.5l2.4 2.6M12 22.5l-2.4-2.6M12 22.5l2.4-2.6M2.9 6.75l3.4.4M2.9 6.75l1 3.3M21.1 17.25l-3.4-.4M21.1 17.25l-1-3.3M2.9 17.25l1-3.3M2.9 17.25l3.4-.4M21.1 6.75l-1 3.3M21.1 6.75l-3.4.4" />
+    </g>
+  </svg>
+);
 
 export function Snowfall() {
   return (
     <div className="snow" aria-hidden="true">
       {FLAKES.map((f, i) => (
         <span
-          key={i}
+          key={`f${i}`}
           className={`flake ${f.blur ? 'soft' : ''}`}
           style={{
             left: `${f.left}%`, width: `${f.size}px`, height: `${f.size}px`, opacity: f.opacity,
@@ -40,6 +64,20 @@ export function Snowfall() {
             '--sway': `${f.sway}px`,
           }}
         />
+      ))}
+      {CRYSTALS.map((c, i) => (
+        <span
+          key={`c${i}`}
+          className="flake crystal"
+          style={{
+            left: `${c.left}%`, width: `${c.size}px`, height: `${c.size}px`, opacity: c.opacity,
+            animationDuration: `${c.dur}s, ${(c.dur / 3).toFixed(1)}s, ${c.spin}s`,
+            animationDelay: `${c.delay}s, ${c.delay}s, ${c.delay}s`,
+            '--sway': `${c.sway}px`,
+          }}
+        >
+          {CRYSTAL}
+        </span>
       ))}
     </div>
   );

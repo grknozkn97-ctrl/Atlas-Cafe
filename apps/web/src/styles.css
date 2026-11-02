@@ -766,3 +766,30 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .deal-img .decor.ny .orn.bl, .deal-img .decor.ny .orn.br { display: none; }
 .deal-img .orn.ny-red, .deal-img .orn.ny-gold { width: 26px; }
 .deal-img .orn.ny-pine { width: 120px; }
+
+/* Stronger snow: crystals that turn as they fall, and snow settled on the
+   banner, the winter specials and the footer. */
+.flake.crystal {
+  background: none; border-radius: 0; filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
+  animation-name: snow-fall, snow-sway, snow-spin; animation-timing-function: linear, ease-in-out, linear;
+  animation-iteration-count: infinite, infinite, infinite; animation-direction: normal, alternate, normal;
+}
+.flake.crystal svg { width: 100%; height: 100%; display: block; }
+@keyframes snow-spin { from { rotate: 0deg; } to { rotate: 360deg; } }
+
+[data-theme='newyear'] .hw-banner { position: relative; }
+[data-theme='newyear'] .hw-banner::before,
+[data-theme='newyear'] .row.featured::before {
+  content: ''; position: absolute; left: 6px; right: 6px; top: -7px; height: 13px; pointer-events: none; z-index: 2;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 13' preserveAspectRatio='none'%3E%3Cpath d='M0 9 Q4 3 10 6 Q16 1 24 5 Q30 2 36 6 Q43 0 51 5 Q57 3 63 6 Q70 1 78 5 Q84 2 91 6 Q98 0 105 5 Q112 3 120 8 L120 13 Q110 10 100 12 Q88 9 76 12 Q62 9 50 12 Q36 9 24 12 Q12 9 0 12 Z' fill='%23ffffff'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.25));
+}
+[data-theme='newyear'] .row.featured { overflow: visible; }
+[data-theme='newyear'] .row.featured::after { display: none; }
+[data-theme='newyear'] .row.featured .row-side { margin-top: 0; }
+[data-theme='newyear'] .foot { position: relative; }
+[data-theme='newyear'] .foot::before {
+  content: ''; position: absolute; left: 0; right: 0; top: -14px; height: 18px; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 18' preserveAspectRatio='none'%3E%3Cpath d='M0 12 Q20 4 44 9 Q70 2 98 8 Q122 3 150 9 Q178 1 206 8 Q232 4 258 9 Q286 2 314 8 Q340 4 366 9 Q384 6 400 10 L400 18 L0 18 Z' fill='%23f4f7f5'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+}
+@media (prefers-reduced-motion: reduce) { .flake.crystal { animation: none; } }
