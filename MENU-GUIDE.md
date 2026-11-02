@@ -23,7 +23,7 @@ Everything a guest sees lives in `apps/web/src/data/`:
 
 ## Languages
 
-Seasonal themes live in `apps/web/src/data/theme.js` (dates) and `halloween.js` (nicknames, picks). Outside a season the classic menu shows; `?theme=classic` or `?theme=halloween` forces one.
+Seasonal themes live in `apps/web/src/data/theme.js` (dates) and `halloween.js` / `newyear.js` (nicknames, featured dishes, banner, mascot lines). Outside a season the classic menu shows; `?theme=classic`, `?theme=halloween` or `?theme=newyear` forces one.
 
 The site opens in the phone's language (Montenegrin for sr/hr/bs/me phones, Italian, French,
 otherwise English). A QR code can force a language: `https://www.cafeatlas.me/?lang=me`.

@@ -477,27 +477,27 @@ button { font: inherit; color: inherit; cursor: pointer; }
   --shadow-sheet: 0 -12px 40px rgba(0, 0, 0, 0.6);
   color-scheme: dark;
 }
-[data-theme='halloween'] body {
+:is([data-theme='halloween'], [data-theme='newyear']) body {
   background:
     radial-gradient(900px 360px at 85% -60px, rgba(232, 118, 44, 0.14), transparent 70%),
     var(--paper);
 }
-[data-theme='halloween'] .logo-wrap {
+:is([data-theme='halloween'], [data-theme='newyear']) .logo-wrap {
   display: grid; place-items: center; flex: none; width: 58px; height: 58px; border-radius: 50%;
   background: radial-gradient(circle at 38% 32%, #fff8e4 0%, #efe2c2 45%, #d5c296 100%);
   box-shadow: 0 0 0 3px rgba(239, 226, 194, 0.08), 0 0 28px rgba(255, 210, 140, 0.35);
 }
-[data-theme='halloween'] .logo-wrap img { width: 44px; height: 44px; }
+:is([data-theme='halloween'], [data-theme='newyear']) .logo-wrap img { width: 44px; height: 44px; }
 
-[data-theme='halloween'] .hw-banner {
+:is([data-theme='halloween'], [data-theme='newyear']) .hw-banner {
   display: flex; gap: 12px; align-items: center; margin-top: 12px; padding: 12px 14px; border-radius: 14px;
   background: linear-gradient(100deg, rgba(232, 118, 44, 0.2), rgba(232, 118, 44, 0.06)); border: 1px solid rgba(232, 118, 44, 0.35);
 }
-[data-theme='halloween'] .hw-banner svg { width: 34px; height: 34px; flex: none; }
-[data-theme='halloween'] .hw-banner strong { display: block; font-family: var(--display); font-weight: 400; font-size: 19px; color: #ffb36b; }
-[data-theme='halloween'] .hw-banner span span { display: block; font-size: 13.5px; color: var(--ink); opacity: 0.85; margin-top: 2px; }
+:is([data-theme='halloween'], [data-theme='newyear']) .hw-banner svg { width: 34px; height: 34px; flex: none; }
+:is([data-theme='halloween'], [data-theme='newyear']) .hw-banner strong { display: block; font-family: var(--display); font-weight: 400; font-size: 19px; color: #ffb36b; }
+:is([data-theme='halloween'], [data-theme='newyear']) .hw-banner span span { display: block; font-size: 13.5px; color: var(--ink); opacity: 0.85; margin-top: 2px; }
 
-[data-theme='halloween'] .bats {
+:is([data-theme='halloween'], [data-theme='newyear']) .bats {
   display: block; position: absolute; top: 4px; left: 100%; width: 110px; height: 46px; fill: rgba(239, 229, 207, 0.55); pointer-events: none;
   animation: bats-fly 7s ease-in-out 0.6s 1 both;
 }
@@ -509,56 +509,56 @@ button { font: inherit; color: inherit; cursor: pointer; }
   100% { transform: translate(calc(-100vw - 160px), 8px); opacity: 0; }
 }
 
-[data-theme='halloween'] .catnav { background: rgba(21, 17, 14, 0.9); }
-[data-theme='halloween'] .when { background: rgba(21, 17, 14, 0.85); color: var(--ink); }
-[data-theme='halloween'] .when[data-live='true'],
-[data-theme='halloween'] .special-tag,
-[data-theme='halloween'] .hw-tag { background: var(--green); color: #1a0f06; }
-[data-theme='halloween'] .when[data-live='true']::before { background: #1a0f06; }
-[data-theme='halloween'] .stamp { color: #1a0f06; }
-[data-theme='halloween'] .chip[aria-current='true'] { background: var(--green); border-color: var(--green); color: #1a0f06; }
-[data-theme='halloween'] .filter-btn[data-on='true'],
-[data-theme='halloween'] .cta:not(.ghost),
-[data-theme='halloween'] .tag.pick,
-[data-theme='halloween'] .count-badge,
-[data-theme='halloween'] .bubble .go:not(.insta) { color: #1a0f06; }
-[data-theme='halloween'] .filter-btn[data-on='true'] svg,
-[data-theme='halloween'] .cta:not(.ghost) svg,
-[data-theme='halloween'] .extra .box svg { stroke: #1a0f06; }
-[data-theme='halloween'] .toggle[aria-pressed='true'] { background: var(--ink); color: #15110e; border-color: var(--ink); }
-[data-theme='halloween'] .toggle[aria-pressed='true'] .num { background: #15110e; color: var(--ink); }
-[data-theme='halloween'] .allergen,
-[data-theme='halloween'] .toggle,
-[data-theme='halloween'] .lang-opt { background: var(--card); }
-[data-theme='halloween'] .allergen .num { color: #1a0f06; }
-[data-theme='halloween'] .note-text { color: #d9cfbb; }
-[data-theme='halloween'] .tag.hot { background: rgba(255, 110, 80, 0.16); }
-[data-theme='halloween'] .tag.out { background: #2b241e; }
-[data-theme='halloween'] .tag.nick { background: rgba(232, 118, 44, 0.16); color: #ffb36b; }
-[data-theme='halloween'] .tag.nick.big { font-size: 13.5px; padding: 4px 10px; margin-top: 10px; width: fit-content; }
-[data-theme='halloween'] .open-state[data-open='true'] { color: #9ad874; }
-[data-theme='halloween'] .open-state[data-open='true']::before { background: #9ad874; box-shadow: 0 0 0 3px rgba(154, 216, 116, 0.18); }
-[data-theme='halloween'] .listbar { background: var(--green); color: #1a0f06; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5); }
-[data-theme='halloween'] .listbar .n { background: #15110e; color: var(--ink); }
-[data-theme='halloween'] .foot { background: #0c0907; }
-[data-theme='halloween'] .waiter { color: #17271e; }
-[data-theme='halloween'] .waiter .cta.ghost { color: #17271e; border-color: #ddd; }
-[data-theme='halloween'] .rating { background: var(--card); }
-[data-theme='halloween'] .search input::placeholder { color: #7f7464; }
-[data-theme='halloween'] .grabber { background: rgba(239, 229, 207, 0.5); }
-[data-theme='halloween'] .sheet-close:not(.plain) { background: rgba(0, 0, 0, 0.55); }
-[data-theme='halloween'] .deal { box-shadow: 0 1px 0 var(--line), 0 8px 22px rgba(0, 0, 0, 0.35); }
-[data-theme='halloween'] .hw-picks h2 { color: #ffb36b; }
-[data-theme='halloween'] .pick-card .deal-img { display: grid; place-items: center; background: radial-gradient(circle at 50% 60%, #3a2a1c, #1f1914 70%); }
-[data-theme='halloween'] .pick-pumpkin { width: 56px; height: 56px; }
-[data-theme='halloween'] .pick-card .deal-img .when { position: absolute; }
-@media (prefers-reduced-motion: reduce) { [data-theme='halloween'] .bats { display: none; } }
+:is([data-theme='halloween'], [data-theme='newyear']) .catnav { background: rgba(21, 17, 14, 0.9); }
+:is([data-theme='halloween'], [data-theme='newyear']) .when { background: rgba(21, 17, 14, 0.85); color: var(--ink); }
+:is([data-theme='halloween'], [data-theme='newyear']) .when[data-live='true'],
+:is([data-theme='halloween'], [data-theme='newyear']) .special-tag,
+:is([data-theme='halloween'], [data-theme='newyear']) .hw-tag { background: var(--green); color: #1a0f06; }
+:is([data-theme='halloween'], [data-theme='newyear']) .when[data-live='true']::before { background: #1a0f06; }
+:is([data-theme='halloween'], [data-theme='newyear']) .stamp { color: #1a0f06; }
+:is([data-theme='halloween'], [data-theme='newyear']) .chip[aria-current='true'] { background: var(--green); border-color: var(--green); color: #1a0f06; }
+:is([data-theme='halloween'], [data-theme='newyear']) .filter-btn[data-on='true'],
+:is([data-theme='halloween'], [data-theme='newyear']) .cta:not(.ghost),
+:is([data-theme='halloween'], [data-theme='newyear']) .tag.pick,
+:is([data-theme='halloween'], [data-theme='newyear']) .count-badge,
+:is([data-theme='halloween'], [data-theme='newyear']) .bubble .go:not(.insta) { color: #1a0f06; }
+:is([data-theme='halloween'], [data-theme='newyear']) .filter-btn[data-on='true'] svg,
+:is([data-theme='halloween'], [data-theme='newyear']) .cta:not(.ghost) svg,
+:is([data-theme='halloween'], [data-theme='newyear']) .extra .box svg { stroke: #1a0f06; }
+:is([data-theme='halloween'], [data-theme='newyear']) .toggle[aria-pressed='true'] { background: var(--ink); color: #15110e; border-color: var(--ink); }
+:is([data-theme='halloween'], [data-theme='newyear']) .toggle[aria-pressed='true'] .num { background: #15110e; color: var(--ink); }
+:is([data-theme='halloween'], [data-theme='newyear']) .allergen,
+:is([data-theme='halloween'], [data-theme='newyear']) .toggle,
+:is([data-theme='halloween'], [data-theme='newyear']) .lang-opt { background: var(--card); }
+:is([data-theme='halloween'], [data-theme='newyear']) .allergen .num { color: #1a0f06; }
+:is([data-theme='halloween'], [data-theme='newyear']) .note-text { color: #d9cfbb; }
+:is([data-theme='halloween'], [data-theme='newyear']) .tag.hot { background: rgba(255, 110, 80, 0.16); }
+:is([data-theme='halloween'], [data-theme='newyear']) .tag.out { background: #2b241e; }
+:is([data-theme='halloween'], [data-theme='newyear']) .tag.nick { background: rgba(232, 118, 44, 0.16); color: #ffb36b; }
+:is([data-theme='halloween'], [data-theme='newyear']) .tag.nick.big { font-size: 13.5px; padding: 4px 10px; margin-top: 10px; width: fit-content; }
+:is([data-theme='halloween'], [data-theme='newyear']) .open-state[data-open='true'] { color: #9ad874; }
+:is([data-theme='halloween'], [data-theme='newyear']) .open-state[data-open='true']::before { background: #9ad874; box-shadow: 0 0 0 3px rgba(154, 216, 116, 0.18); }
+:is([data-theme='halloween'], [data-theme='newyear']) .listbar { background: var(--green); color: #1a0f06; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5); }
+:is([data-theme='halloween'], [data-theme='newyear']) .listbar .n { background: #15110e; color: var(--ink); }
+:is([data-theme='halloween'], [data-theme='newyear']) .foot { background: #0c0907; }
+:is([data-theme='halloween'], [data-theme='newyear']) .waiter { color: #17271e; }
+:is([data-theme='halloween'], [data-theme='newyear']) .waiter .cta.ghost { color: #17271e; border-color: #ddd; }
+:is([data-theme='halloween'], [data-theme='newyear']) .rating { background: var(--card); }
+:is([data-theme='halloween'], [data-theme='newyear']) .search input::placeholder { color: #7f7464; }
+:is([data-theme='halloween'], [data-theme='newyear']) .grabber { background: rgba(239, 229, 207, 0.5); }
+:is([data-theme='halloween'], [data-theme='newyear']) .sheet-close:not(.plain) { background: rgba(0, 0, 0, 0.55); }
+:is([data-theme='halloween'], [data-theme='newyear']) .deal { box-shadow: 0 1px 0 var(--line), 0 8px 22px rgba(0, 0, 0, 0.35); }
+:is([data-theme='halloween'], [data-theme='newyear']) .hw-picks h2 { color: #ffb36b; }
+:is([data-theme='halloween'], [data-theme='newyear']) .pick-card .deal-img { display: grid; place-items: center; background: radial-gradient(circle at 50% 60%, #3a2a1c, #1f1914 70%); }
+:is([data-theme='halloween'], [data-theme='newyear']) .pick-pumpkin { width: 56px; height: 56px; }
+:is([data-theme='halloween'], [data-theme='newyear']) .pick-card .deal-img .when { position: absolute; }
+@media (prefers-reduced-motion: reduce) { :is([data-theme='halloween'], [data-theme='newyear']) .bats { display: none; } }
 
 /* ── Halloween: trick-or-treaters and photo ornaments ── */
 .walkers { display: none; }
-[data-theme='halloween'] .walkers { display: block; position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
-[data-theme='halloween'] .top, [data-theme='halloween'] .deals, [data-theme='halloween'] main, [data-theme='halloween'] .empty { position: relative; z-index: 1; }
-[data-theme='halloween'] .foot { position: relative; z-index: 1; }
+:is([data-theme='halloween'], [data-theme='newyear']) .walkers { display: block; position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+:is([data-theme='halloween'], [data-theme='newyear']) .top, :is([data-theme='halloween'], [data-theme='newyear']) .deals, :is([data-theme='halloween'], [data-theme='newyear']) main, :is([data-theme='halloween'], [data-theme='newyear']) .empty { position: relative; z-index: 1; }
+:is([data-theme='halloween'], [data-theme='newyear']) .foot { position: relative; z-index: 1; }
 .walker { position: absolute; left: 0; opacity: 0.2; animation: walk-ltr linear infinite; will-change: transform; }
 .walker.rtl { animation-name: walk-rtl; }
 .walker.rtl svg { transform: scaleX(-1); }
@@ -568,12 +568,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
 @keyframes walk-rtl { from { transform: translateX(calc(100vw + 20px)); } to { transform: translateX(-90px); } }
 @keyframes walk-bob { from { transform: translateY(0) rotate(-2deg); } to { transform: translateY(-4px) rotate(2deg); } }
 @media (min-width: 900px) { .walker { opacity: 0.16; } }
-@media (prefers-reduced-motion: reduce) { [data-theme='halloween'] .walkers { display: none; } }
+@media (prefers-reduced-motion: reduce) { :is([data-theme='halloween'], [data-theme='newyear']) .walkers { display: none; } }
 
 .decor { display: none; }
-[data-theme='halloween'] .decor { display: block; position: absolute; inset: 0; pointer-events: none; }
-[data-theme='halloween'] .row-thumb { box-shadow: inset 0 0 0 1.5px rgba(232, 118, 44, 0.55); }
-[data-theme='halloween'] .row-thumb img { position: relative; z-index: 0; }
+:is([data-theme='halloween'], [data-theme='newyear']) .decor { display: block; position: absolute; inset: 0; pointer-events: none; }
+:is([data-theme='halloween'], [data-theme='newyear']) .row-thumb { box-shadow: inset 0 0 0 1.5px rgba(232, 118, 44, 0.55); }
+:is([data-theme='halloween'], [data-theme='newyear']) .row-thumb img { position: relative; z-index: 0; }
 .orn { position: absolute; z-index: 1; filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.55)); }
 .orn.web { width: 42%; height: 42%; }
 .orn.web.tl { top: 0; left: 0; }
@@ -595,7 +595,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .decor.big .orn.spider { width: 8%; height: 22%; }
 .deal-img .orn.web.tl { display: none; } /* the time badge sits there */
 .sheet-photo { position: relative; }
-[data-theme='halloween'] .sheet-photo img { position: relative; z-index: 0; }
+:is([data-theme='halloween'], [data-theme='newyear']) .sheet-photo img { position: relative; z-index: 0; }
 /* Keep the close button clear on the large card photo. */
 .decor.big .orn.web.tr { right: auto; left: 0; transform: none; }
 .decor.big .orn.spider.tl { left: auto; right: 22%; }
@@ -603,7 +603,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 /* Halloween specials: framed in pumpkin orange at the top of their group. */
 .feat-li { margin: 6px 0 10px; }
-[data-theme='halloween'] .row.featured {
+:is([data-theme='halloween'], [data-theme='newyear']) .row.featured {
   border: 2px solid var(--green); border-radius: 18px; padding: 14px; align-items: flex-start;
   background: linear-gradient(135deg, rgba(232, 118, 44, 0.22), rgba(232, 118, 44, 0.05) 60%);
   box-shadow: 0 0 0 4px rgba(232, 118, 44, 0.1), 0 10px 28px rgba(232, 118, 44, 0.16);
@@ -616,12 +616,153 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .feat-badge svg { width: 15px; height: 15px; }
 .feat-nick { font-family: var(--display); font-size: 25px; line-height: 1.1; color: #ffb36b; margin-bottom: 4px; }
 .feat-tale { font-size: 14px; font-style: italic; color: #f3d9b8; margin: 4px 0 2px; line-height: 1.45; }
-.feat-tale.sheet { margin-top: 12px; font-size: 15px; }
-[data-theme='halloween'] .row.featured .row-thumb { width: 104px; height: 104px; box-shadow: inset 0 0 0 2px rgba(232, 118, 44, 0.8); }
-[data-theme='halloween'] .row.featured .row-name { font-size: 15px; color: var(--muted); }
+.feat-tale.in-sheet { margin-top: 12px; font-size: 15px; }
+:is([data-theme='halloween'], [data-theme='newyear']) .row.featured .row-thumb { width: 104px; height: 104px; box-shadow: inset 0 0 0 2px rgba(232, 118, 44, 0.8); }
+:is([data-theme='halloween'], [data-theme='newyear']) .row.featured .row-name { font-size: 15px; color: var(--muted); }
 @media (max-width: 639px) {
   .feat-nick { font-size: 22px; }
-  [data-theme='halloween'] .row.featured .row-thumb { width: 92px; height: 92px; }
+  :is([data-theme='halloween'], [data-theme='newyear']) .row.featured .row-thumb { width: 92px; height: 92px; }
 }
 .deal-img .orn.tl { display: none; } /* the time badge sits in that corner */
-[data-theme='halloween'] .row.featured { background: linear-gradient(135deg, rgba(232, 118, 44, 0.22), rgba(232, 118, 44, 0.05) 60%), #1b1510; position: relative; z-index: 1; }
+:is([data-theme='halloween'], [data-theme='newyear']) .row.featured { background: linear-gradient(135deg, rgba(232, 118, 44, 0.22), rgba(232, 118, 44, 0.05) 60%), #1b1510; position: relative; z-index: 1; }
+
+/* ═════════════ New Year ═════════════
+   A winter night in pine green, snow-cream text and champagne gold for
+   anything you can tap or that costs money. One loud moment: a string of
+   lights over the header and a wreath around the compass. Snow falls slowly
+   behind the menu; everything stops for reduced motion. */
+:root[data-theme='newyear'] {
+  --ink: #f4eedf;
+  --green: #e2bd5f;
+  --green-soft: rgba(226, 189, 95, 0.16);
+  --espresso: #f2d27e;
+  --crema: #1f3127;
+  --brass: #e2bd5f;
+  --brass-soft: rgba(226, 189, 95, 0.13);
+  --paper: #0d1a14;
+  --card: #142419;
+  --line: #27392d;
+  --muted: #a7b2a3;
+  --danger: #ff8a7a;
+  --shadow-sheet: 0 -12px 40px rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+[data-theme='newyear'] body {
+  background:
+    radial-gradient(700px 320px at 90% -80px, rgba(226, 189, 95, 0.16), transparent 70%),
+    radial-gradient(800px 420px at -10% 0, rgba(120, 170, 210, 0.08), transparent 70%),
+    var(--paper);
+}
+[data-theme='newyear'] .foot { background: #08110d; }
+[data-theme='newyear'] .catnav { background: rgba(13, 26, 20, 0.9); }
+[data-theme='newyear'] .when { background: rgba(13, 26, 20, 0.85); }
+[data-theme='newyear'] .listbar .n { background: #0d1a14; }
+[data-theme='newyear'] .toggle[aria-pressed='true'] { color: #0d1a14; }
+[data-theme='newyear'] .toggle[aria-pressed='true'] .num { background: #0d1a14; }
+[data-theme='newyear'] .note-text { color: #dfe3d6; }
+[data-theme='newyear'] .tag.out { background: #1d2f24; }
+[data-theme='newyear'] .search input::placeholder { color: #7d8a7c; }
+[data-theme='newyear'] .open-state[data-open='true'] { color: #9fe0a8; }
+[data-theme='newyear'] .open-state[data-open='true']::before { background: #9fe0a8; box-shadow: 0 0 0 3px rgba(159, 224, 168, 0.18); }
+
+/* Header: lights and wreath */
+[data-theme='newyear'] .top { padding-top: 34px; }
+.garland { display: none; }
+[data-theme='newyear'] .garland { display: block; position: absolute; top: 0; left: 0; right: 0; height: 34px; pointer-events: none; }
+.garland svg { position: absolute; inset: 0 0 auto 0; width: 100%; height: 30px; }
+.bulb {
+  position: absolute; width: 8px; height: 12px; margin-left: -4px; border-radius: 50% 50% 46% 46% / 58% 58% 42% 42%;
+  background: #f2cf63; box-shadow: 0 0 8px 2px rgba(242, 207, 99, 0.55);
+  animation: twinkle 2.4s ease-in-out infinite;
+}
+.bulb::before { content: ''; position: absolute; top: -3px; left: 2px; width: 4px; height: 4px; border-radius: 1px; background: #4a5a4c; }
+.bulb.red { background: #ff5a4e; box-shadow: 0 0 8px 2px rgba(255, 90, 78, 0.5); }
+.bulb.ice { background: #9fdcff; box-shadow: 0 0 8px 2px rgba(159, 220, 255, 0.5); }
+.bulb.green { background: #6fe08a; box-shadow: 0 0 8px 2px rgba(111, 224, 138, 0.45); }
+@keyframes twinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+[data-theme='newyear'] .logo-wrap {
+  position: relative; display: grid; place-items: center; flex: none; width: 60px; height: 60px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #fffdf6, #efe6cf 70%, #dccfae);
+  box-shadow: 0 0 22px rgba(242, 207, 99, 0.28);
+}
+[data-theme='newyear'] .logo-wrap img { width: 46px; height: 46px; position: relative; z-index: 1; }
+.wreath { position: absolute; inset: -9px; width: calc(100% + 18px); height: calc(100% + 18px); z-index: 0; pointer-events: none; }
+[data-theme='newyear'] .brand { gap: 16px; }
+
+[data-theme='newyear'] .hw-banner {
+  background: linear-gradient(100deg, rgba(226, 189, 95, 0.2), rgba(226, 189, 95, 0.05)); border-color: rgba(226, 189, 95, 0.4);
+}
+[data-theme='newyear'] .hw-banner strong { color: #f2d27e; }
+
+/* Snowfall */
+.snow { display: none; }
+[data-theme='newyear'] .snow { display: block; position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.flake {
+  position: absolute; top: -12px; border-radius: 50%; background: #ffffff;
+  animation-name: snow-fall, snow-sway; animation-timing-function: linear, ease-in-out;
+  animation-iteration-count: infinite, infinite; animation-direction: normal, alternate;
+  will-change: transform;
+}
+.flake.soft { filter: blur(1px); }
+@keyframes snow-fall { from { transform: translateY(-20px); } to { transform: translateY(105vh); } }
+@keyframes snow-sway { from { translate: calc(var(--sway) * -0.5) 0; } to { translate: calc(var(--sway) * 0.5) 0; } }
+
+/* Winter specials: framed in gold at the top of their group */
+[data-theme='newyear'] .row.featured {
+  border-color: #e2bd5f;
+  background: linear-gradient(135deg, rgba(226, 189, 95, 0.2), rgba(226, 189, 95, 0.04) 60%), #12221a;
+  box-shadow: 0 0 0 4px rgba(226, 189, 95, 0.1), 0 10px 28px rgba(226, 189, 95, 0.14);
+  overflow: hidden;
+}
+/* a red ribbon across the corner, like a wrapped present */
+[data-theme='newyear'] .row.featured::after {
+  content: ''; position: absolute; top: 14px; right: -34px; width: 120px; height: 14px; transform: rotate(38deg);
+  background: linear-gradient(#d2413a, #b32f2a); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); pointer-events: none;
+}
+[data-theme='newyear'] .row.featured.text-row::after { top: 12px; }
+[data-theme='newyear'] .row.featured .row-side { position: relative; z-index: 1; margin-top: 18px; }
+[data-theme='newyear'] .feat-nick { color: #f2d27e; }
+[data-theme='newyear'] .feat-tale { color: #e8e2cc; }
+[data-theme='newyear'] .row.featured .row-thumb { box-shadow: inset 0 0 0 2px rgba(226, 189, 95, 0.85); }
+[data-theme='newyear'] .row-thumb { box-shadow: inset 0 0 0 1.5px rgba(226, 189, 95, 0.5); }
+[data-theme='newyear'] .tag.nick { background: rgba(226, 189, 95, 0.15); color: #f2d27e; }
+
+/* Photo ornaments */
+.orn.ny-red, .orn.ny-gold { width: 20%; height: auto; top: 0; }
+.orn.ny-red.tl, .orn.ny-gold.tl { left: 10%; }
+.orn.ny-red.tr, .orn.ny-gold.tr { right: 10%; }
+.orn.ny-holly { width: 40%; height: auto; bottom: -3%; }
+.orn.ny-holly.bl { left: -5%; }
+.orn.ny-holly.br { right: -5%; transform: scaleX(-1); }
+.orn.ny-flake { width: 24%; height: auto; bottom: 5%; opacity: 0.9; }
+.orn.ny-flake.br { right: 5%; }
+.orn.ny-flake.bl { left: 5%; }
+.orn.ny-gift { width: 30%; height: auto; bottom: -4%; }
+.orn.ny-gift.bl { left: -4%; }
+.orn.ny-gift.br { right: -4%; }
+.orn.ny-pine { width: 64%; height: auto; top: -3%; }
+.orn.ny-pine.tl { left: -8%; }
+.orn.ny-pine.tr { right: -8%; transform: scaleX(-1); }
+.decor.ny.big .orn.ny-red, .decor.ny.big .orn.ny-gold { width: 8%; }
+.decor.ny.big .orn.ny-holly { width: 16%; bottom: 2%; }
+.decor.ny.big .orn.ny-holly.bl { left: 2%; }
+.decor.ny.big .orn.ny-holly.br { right: 2%; }
+.decor.ny.big .orn.ny-flake { width: 9%; bottom: 4%; }
+.decor.ny.big .orn.ny-gift { width: 11%; bottom: 3%; }
+.decor.ny.big .orn.ny-gift.bl { left: 3%; }
+.decor.ny.big .orn.ny-gift.br { right: 3%; }
+.decor.ny.big .orn.ny-pine { width: 30%; top: -1%; }
+/* keep the close button (top right) clear on the large card photo */
+.decor.ny.big .orn.tr { right: auto; left: 14%; transform: none; }
+.decor.ny.big .orn.ny-pine.tr { left: -2%; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-theme='newyear'] .snow { display: none; }
+  .bulb { animation: none; }
+}
+/* Deal photos are wide: only the top ornament, kept small, so the time badge
+   and the saving stamp stay clear. */
+.deal-img .decor.ny .orn.bl, .deal-img .decor.ny .orn.br { display: none; }
+.deal-img .orn.ny-red, .deal-img .orn.ny-gold { width: 26px; }
+.deal-img .orn.ny-pine { width: 120px; }

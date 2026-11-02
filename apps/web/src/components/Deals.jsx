@@ -1,9 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { useLang, podgoricaHour, isLive } from '@/lib/store.jsx';
 import { deals } from '@/data/deals.js';
-import { Pumpkin } from './icons.jsx';
-import { PhotoDecor } from './Halloween.jsx';
-import { isHalloween } from '@/data/theme.js';
+import { SeasonDecor } from './Seasonal.jsx';
 
 export function DealCard({ deal, live, onOpen }) {
   const { t, tr, money } = useLang();
@@ -12,7 +10,7 @@ export function DealCard({ deal, live, onOpen }) {
     <button type="button" className="deal" data-live={live} onClick={() => onOpen(deal)}>
       <div className="deal-img">
         <img src={deal.img} alt="" loading="lazy" decoding="async" onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} />
-        {isHalloween && <PhotoDecor id={deal.id} />}
+        <SeasonDecor id={deal.id} />
         <span className="when" data-live={live}>{live ? t.now : t.from(deal.from)}</span>
         {saving ? (
           <span className="stamp" aria-label={t.save(money(saving))}>

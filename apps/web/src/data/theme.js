@@ -1,8 +1,9 @@
 // Seasonal themes. "classic" is the everyday menu and always the fallback.
 // A season switches itself on and off by date (Podgorica time), so nobody has
-// to remember to change it back. ?theme=classic or ?theme=halloween forces one.
+// to remember to change it back. ?theme=classic, ?theme=halloween or ?theme=newyear forces one.
 export const SEASONS = [
   { id: 'halloween', from: '2026-10-19', to: '2026-11-15' }, // last day included
+  { id: 'newyear', from: '2026-11-16', to: '2027-01-14' }, // Orthodox New Year is 14 January
 ];
 
 function podgoricaDate() {
@@ -25,3 +26,4 @@ export function pickTheme() {
 
 export const THEME = pickTheme();
 export const isHalloween = THEME === 'halloween';
+export const isNewYear = THEME === 'newyear';

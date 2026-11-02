@@ -1,9 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLang, useList } from '@/lib/store.jsx';
-import { isHalloween } from '@/data/theme.js';
-import { nicknames, featured, tales, hui } from '@/data/halloween.js';
-import { Pumpkin } from './icons.jsx';
-import { PhotoDecor } from './Halloween.jsx';
+import { season } from '@/data/season.js';
+import { SeasonDecor, SeasonIcon } from './Seasonal.jsx';
 
 const scrollToId = (id) => {
   const el = document.getElementById(id);
@@ -74,7 +72,8 @@ function Row({ item, onOpen }) {
   const { itemName, ingList, tr, money, t, lang } = useLang();
   const { perItem } = useList();
   const [imgOk, setImgOk] = useState(true);
-  const feat = isHalloween && featured.includes(item.id);
+  const feat = !!season && season.featured.includes(item.id);
+  const nick = season && season.nicknames[item.id];
   const desc = item.ing?.length ? ingList(item).join(', ') : tr(item.note);
   const count = perItem[item.id] || 0;
   const photo = item.img && imgOk;
@@ -84,19 +83,19 @@ function Row({ item, onOpen }) {
         <div className="row-main">
           {feat && (
             <>
-              <span className="feat-badge"><Pumpkin />{hui[lang].featuredTag}</span>
-              <div className="feat-nick">{tr(nicknames[item.id])}</div>
+              <span className="feat-badge"><SeasonIcon />{season.hui[lang].featuredTag}</span>
+              <div className="feat-nick">{tr(nick)}</div>
             </>
           )}
           <div className="row-name">
             <span>{itemName(item)}</span>
-            {isHalloween && !feat && nicknames[item.id] && <span className="tag nick"><Pumpkin />{tr(nicknames[item.id])}</span>}
+            {!feat && nick && <span className="tag nick"><SeasonIcon />{tr(nick)}</span>}
             {item.spicy && <span className="tag hot">{t.spicy}</span>}
             {item.signature && <span className="tag">{t.signature}</span>}
             {item.special && !item.soldOut && <span className="tag pick">{t.special}</span>}
             {item.soldOut && <span className="tag out">{t.soldOut}</span>}
           </div>
-          {feat && <div className="feat-tale">{tr(tales[item.id])}</div>}
+          {feat && <div className="feat-tale">{tr(season.tales[item.id])}</div>}
           {desc && <div className="row-desc">{desc}</div>}
           {photo ? (
             <div className="row-meta">
@@ -110,7 +109,7 @@ function Row({ item, onOpen }) {
         {photo ? (
           <div className="row-thumb">
             <img src={item.img} alt="" loading="lazy" decoding="async" width="92" height="92" onError={() => setImgOk(false)} />
-            {isHalloween && <PhotoDecor id={item.id} />}
+            <SeasonDecor id={item.id} />
             {count > 0 && <span className="count-badge" aria-label={t.inList(count)}>{count}</span>}
           </div>
         ) : (

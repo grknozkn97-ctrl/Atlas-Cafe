@@ -5,8 +5,8 @@ import { CloseIcon } from './icons.jsx';
 
 import { INSTAGRAM_URL as INSTAGRAM, REVIEW_URL as GOOGLE } from '@/data/business.js';
 import { track } from '@/lib/track.js';
-import { isHalloween } from '@/data/theme.js';
-import { hui } from '@/data/halloween.js';
+import { isHalloween, isNewYear } from '@/data/theme.js';
+import { season } from '@/data/season.js';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const get = (s, k) => { try { return s.getItem(k); } catch { return null; } };
@@ -27,7 +27,7 @@ const set = (s, k, v) => { try { s.setItem(k, v); } catch { /* storage off */ } 
 */
 export default function Mascot({ suppressed }) {
   const { t: base, lang } = useLang();
-  const t = isHalloween ? { ...base, ...hui[lang] } : base;
+  const t = season ? { ...base, ...season.hui[lang] } : base;
   const reduce = useReducedMotion();
   const [phase, setPhase] = useState('off'); // off | peek | talk
   const [kind, setKind] = useState('insta');
@@ -147,7 +147,7 @@ export default function Mascot({ suppressed }) {
                 <Bean talking={phase === 'talk'} reduce={reduce} />
               </motion.span>
             </span>
-            {isHalloween ? <Cauldron /> : <Cup />}
+            {isHalloween ? <Cauldron /> : isNewYear ? <SnowCup /> : <Cup />}
           </motion.button>
         )}
       </AnimatePresence>
@@ -165,6 +165,25 @@ function Cup() {
       <path d="M12 7 H80 L76 29 Q74 36 64 36 H28 Q18 36 16 29 Z" fill="#fffdf7" stroke="#d9cfba" strokeWidth="1.2" />
       <path d="M13.6 14 H78.4 L77.6 18.5 H14.5 Z" fill="#2c4a38" />
       <ellipse cx="46" cy="7" rx="34" ry="3.4" fill="none" stroke="#d9cfba" strokeWidth="1.2" />
+    </svg>
+  );
+}
+
+// New Year: the usual cup with a snow cap on the rim, a red band and holly.
+function SnowCup() {
+  return (
+    <svg className="cup" viewBox="0 0 92 44" aria-hidden="true">
+      <ellipse cx="46" cy="39" rx="40" ry="5" fill="rgba(0,0,0,0.3)" />
+      <path d="M78 14 c9 0 10 13 0 13" fill="none" stroke="#fffdf7" strokeWidth="5" />
+      <path d="M78 14 c9 0 10 13 0 13" fill="none" stroke="#d9cfba" strokeWidth="1.2" />
+      <path d="M12 7 H80 L76 29 Q74 36 64 36 H28 Q18 36 16 29 Z" fill="#fffdf7" stroke="#d9cfba" strokeWidth="1.2" />
+      <path d="M13.6 14 H78.4 L77.6 18.5 H14.5 Z" fill="#c8312e" />
+      <path d="M9 7.5 Q14 2 22 5 Q30 1 38 4.5 Q46 1 54 4.5 Q62 1 70 4.5 Q78 2 83 7.5 Q84 11 79 10.5 Q76 13 72 10.5 Q66 13 60 10.6 Q52 13 46 10.6 Q38 13 32 10.6 Q24 13 18 10.6 Q11 12 9 7.5 Z" fill="#ffffff" />
+      <g transform="translate(20 22)">
+        <path d="M0 0 C-5 -5 -9 -3 -10 -1 c2 0 2 2 4 2 c-1 1 1 3 2 2 c1 1 3 1 4 -3Z" fill="#2f7a49" />
+        <path d="M0 0 C5 -5 9 -3 10 -1 c-2 0 -2 2 -4 2 c1 1 -1 3 -2 2 c-1 1 -3 1 -4 -3Z" fill="#3a8c55" />
+        <circle cx="-1.4" cy="1" r="1.8" fill="#e04a40" /><circle cx="1.6" cy="1.2" r="1.8" fill="#d2413a" />
+      </g>
     </svg>
   );
 }
@@ -274,6 +293,14 @@ function Bean({ talking, reduce }) {
           )}
         </g>
       </motion.g>
+      {/* New Year: a Santa hat, tip drooping to the side */}
+      {isNewYear && (
+        <motion.g animate={breathe} style={{ transformOrigin: '50px 106px' }}>
+          <path d="M31 55 C 33 40, 50 34, 64 40 C 72 44, 78 52, 80 60 C 74 54, 68 50, 66 52 L 69 55 Z" fill="#c8312e" />
+          <path d="M29 55.5 C 40 49, 60 48, 71 55.5 L 70 61 C 60 55, 40 55, 30 61 Z" fill="#fffaf0" />
+          <circle cx="81" cy="61" r="5" fill="#fffaf0" />
+        </motion.g>
+      )}
     </svg>
   );
 }

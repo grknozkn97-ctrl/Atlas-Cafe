@@ -2,9 +2,11 @@ import React from 'react';
 import { useLang } from '@/lib/store.jsx';
 import { LANGS } from '@/data/i18n.js';
 import { MAPS_URL, REVIEW_URL, openState, rating } from '@/data/business.js';
-import { CloseIcon, FilterIcon, GlobeIcon, SearchIcon, Star, Pumpkin } from './icons.jsx';
-import { isHalloween } from '@/data/theme.js';
-import { hui } from '@/data/halloween.js';
+import { CloseIcon, FilterIcon, GlobeIcon, SearchIcon, Star } from './icons.jsx';
+import { isHalloween, isNewYear } from '@/data/theme.js';
+import { season } from '@/data/season.js';
+import { SeasonIcon } from './Seasonal.jsx';
+import { Garland, Wreath } from './NewYear.jsx';
 
 export default function Top({ query, setQuery, onLang, onFilter, hiddenAllergens, hiddenCount, clearFilter }) {
   const { t, lang } = useLang();
@@ -15,7 +17,7 @@ export default function Top({ query, setQuery, onLang, onFilter, hiddenAllergens
     <header className="top wrap">
       <div className="top-row">
         <a className="brand" href="/" aria-label="Atlas Cafe & Bar">
-          <span className="logo-wrap"><img src="/logo.png" alt="" width="46" height="46" /></span>
+          <span className="logo-wrap">{isNewYear && <Wreath />}<img src="/logo.png" alt="" width="46" height="46" /></span>
           <span>
             <span className="brand-name">Atlas Cafe &amp; Bar</span>
             <span className="brand-sub" style={{ display: 'block' }}>{t.tagline}</span>
@@ -27,16 +29,17 @@ export default function Top({ query, setQuery, onLang, onFilter, hiddenAllergens
       </div>
 
       <StatusRow />
-      {isHalloween && (
+      {season && (
         <div className="hw-banner">
-          <Pumpkin />
+          <SeasonIcon />
           <span>
-            <strong>{hui[lang].bannerTitle}</strong>
-            <span>{hui[lang].bannerText}</span>
+            <strong>{season.hui[lang].bannerTitle}</strong>
+            <span>{season.hui[lang].bannerText}</span>
           </span>
         </div>
       )}
       {isHalloween && <Bats />}
+      {isNewYear && <Garland />}
 
       <div className="tools">
         <label className="search">

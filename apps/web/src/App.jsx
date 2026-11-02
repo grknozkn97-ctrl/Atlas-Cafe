@@ -5,9 +5,9 @@ import { sections as baseSections, itemsById } from '@/data/menu.js';
 import { ingredients } from '@/data/ingredients.js';
 import Top from '@/components/Top.jsx';
 import Deals from '@/components/Deals.jsx';
-import { THEME, isHalloween } from '@/data/theme.js';
-import { featureFirst } from '@/data/halloween.js';
-import { TrickOrTreaters } from '@/components/Halloween.jsx';
+import { THEME } from '@/data/theme.js';
+import { featureFirst } from '@/data/season.js';
+import { SeasonBackdrop } from '@/components/Seasonal.jsx';
 import { CatNav, MenuList, scrollToId } from '@/components/Menu.jsx';
 import ProductSheet, { DealSheet } from '@/components/ProductSheet.jsx';
 import { FilterSheet, Footer, LangSheet, ListBar, ListSheet } from '@/components/Panels.jsx';
@@ -24,7 +24,7 @@ function Page() {
   const live = useLiveData();
   const allSections = useMemo(() => {
     const withLive = applyLive(baseSections, live);
-    return isHalloween ? featureFirst(withLive) : withLive;
+    return featureFirst(withLive);
   }, [live]);
   // Keep the schema.org menu in step with the live prices (plain names, classic order).
   useEffect(() => { publishMenuSchema(applyLive(baseSections, live)); }, [live]);
@@ -83,7 +83,7 @@ function Page() {
   useEffect(() => {
     document.documentElement.dataset.theme = THEME;
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', isHalloween ? '#15110e' : '#f6f2e8');
+    if (meta) meta.setAttribute('content', THEME === 'halloween' ? '#15110e' : THEME === 'newyear' ? '#0d1a14' : '#f6f2e8');
   }, []);
   const openDeal = useCallback((d) => {
     track('Deal opened', { id: d.id }); setItem(null); setTimeout(() => setDeal(d), item ? 260 : 0); }, [item]);
@@ -91,7 +91,7 @@ function Page() {
 
   return (
     <>
-      {isHalloween && <TrickOrTreaters />}
+      <SeasonBackdrop />
       <Top
         query={query}
         setQuery={setQuery}
