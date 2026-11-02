@@ -7,7 +7,7 @@ import { CheckIcon, InfoIcon, PlusIcon } from './icons.jsx';
 import { useLang, useList } from '@/lib/store.jsx';
 import { allergens } from '@/data/ingredients.js';
 import { extras as extrasData } from '@/data/menu.js';
-import { deals, dealForGroup } from '@/data/deals.js';
+import { activeDeals as deals, dealForGroup } from '@/data/deals.js';
 import { season } from '@/data/season.js';
 import { SeasonDecor, SeasonIcon } from './Seasonal.jsx';
 

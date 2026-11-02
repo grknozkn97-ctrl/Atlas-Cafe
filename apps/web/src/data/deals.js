@@ -1,5 +1,6 @@
 // Combo deals. `from`/`to` are hours (Podgorica time) when the deal is the
 // natural choice; outside that window it still shows, just after the live ones.
+// `off: true` takes a deal off the menu for now without deleting it.
 // `regular` is what the same items cost one by one; leave it null when the
 // regular price is not known exactly, and no saving is claimed.
 
@@ -14,6 +15,7 @@ export const deals = [
     price: 4.0,
     regular: 5.5,
     from: 9, to: 12,
+    off: true, // paused by the owner on 2 Nov 2026
     img: CDN + '8f7d7fe256589569a8abb7d8eec9b715.png',
   },
   {
@@ -45,6 +47,9 @@ export const deals = [
     img: CDN + '4ba4d8effa966d7c6fe4743afb4ab281.png',
   },
 ];
+
+// Deals the guest can see right now.
+export const activeDeals = deals.filter((d) => !d.off);
 
 // Which deal to suggest inside a product card, by menu group.
 export const dealForGroup = {

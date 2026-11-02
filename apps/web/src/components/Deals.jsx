@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { useLang, podgoricaHour, isLive } from '@/lib/store.jsx';
-import { deals } from '@/data/deals.js';
+import { activeDeals as deals } from '@/data/deals.js';
 import { SeasonDecor } from './Seasonal.jsx';
 
 export function DealCard({ deal, live, onOpen }) {
